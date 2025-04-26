@@ -36,7 +36,7 @@ jobs:
 
   deploy:
     name: Deploy to ${{ inputs.environment }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       deployment-outputs: ${{ steps.deploy.outputs.outputs }}
     

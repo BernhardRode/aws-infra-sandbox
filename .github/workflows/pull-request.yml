@@ -27,7 +27,7 @@ jobs:
   comment-pr:
     name: Comment on PR
     needs: deploy-pr
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     if: ${{ needs.deploy-pr.outputs.deployment-outputs != '' }}
     steps:
       - name: Comment on PR
