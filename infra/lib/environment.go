@@ -73,7 +73,7 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 
 	// Add nil check for app
 	if app == nil {
-		return env
+		panic("CDK app is nil. Cannot extract environment context.")
 	}
 
 	envName := app.Node().TryGetContext(jsii.String("environment"))
@@ -91,10 +91,16 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 
 	env = Environment{}
 
-	if envName != nil {
-		if nameStr, ok := envName.(string); ok {
-			env.Name = nameStr
-		}
+	// Validate environment context
+	if envName == nil || (envName != nil && envName.(string) == "") {
+		panic("Missing required CDK context: environment. Please pass --context environment=<env> to cdk deploy.")
+	}
+	if envName.(string) == "preview" && (prNumber == nil || prNumber.(string) == "") {
+		panic("Missing required CDK context: prNumber for preview environment. Please pass --context prNumber=<prNumber> to cdk deploy.")
+	}
+
+	if nameStr, ok := envName.(string); ok {
+		env.Name = nameStr
 	}
 
 	if prNumber != nil {
