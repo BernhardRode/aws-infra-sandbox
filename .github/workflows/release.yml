@@ -10,6 +10,11 @@ permissions:
   pull-requests: write
   id-token: write
 
+env:
+  AWS_REGION: 'eu-central-1'
+  GO_VERSION: '1.21'
+  AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+
 jobs:
   unit-tests:
     name: Run Unit Tests
@@ -31,9 +36,7 @@ jobs:
         id: release
         uses: googleapis/release-please-action@v4
         with:
-          token: ${{ steps.generate_token.outputs.token }}
           release-type: go
-          package-name: aws-infra-sandbox
 
   deploy-staging:
     name: Deploy to Staging
@@ -45,7 +48,7 @@ jobs:
       version: ${{ needs.release-please.outputs.tag_name }}
       go-version: ${{ github.event.inputs.go-version }}
       skip-tests: true  # Tests already ran in the unit-tests job
-      role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      role-to-assume: env.AWS_ROLE_TO_ASSUME
       aws-region: 'eu-central-1'
 
   test-staging:
@@ -101,7 +104,5 @@ jobs:
     with:
       environment: production
       version: ${{ needs.release-please.outputs.tag_name }}
-      go-version: ${{ github.event.inputs.go-version }}
       skip-tests: true  # Tests already ran in the unit-tests job
-      role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
-      aws-region: 'eu-central-1'
+    secrets: inherit
