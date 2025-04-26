@@ -40,9 +40,18 @@ func kebabCase(s string) string {
 }
 
 func (e *Environment) GetStackName(suffix string) string {
-	println("Environment Name: ", e.Name)
-	println("Environment Username: ", e.Username)
-	println("Environment Version: ", e.Version)
+	// recursive print e
+	println("Environment:", e)
+	println("Environment Name:", e.Name)
+	println("Environment PRNumber:", e.PRNumber)
+	println("Environment Version:", e.Version)
+	println("Environment Username:", e.Username)
+	println("Environment IsPreview:", e.IsPreview)
+	println("Environment Suffix:", suffix)
+
+	if e.Name == "preview" {
+		return e.Name + "-" + e.PRNumber + "-" + kebabCase(suffix)
+	}
 	if e.Name == "development" {
 		// If username is empty, use the current username
 		username := e.Username
@@ -50,9 +59,6 @@ func (e *Environment) GetStackName(suffix string) string {
 			username = getCurrentUsername()
 		}
 		return e.Name + "-" + username + "-" + kebabCase(suffix)
-	}
-	if e.Name == "preview" {
-		return e.Name + "-" + e.PRNumber + "-" + kebabCase(suffix)
 	}
 
 	return e.Name + "-" + kebabCase(suffix)
