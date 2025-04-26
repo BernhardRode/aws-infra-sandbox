@@ -66,13 +66,14 @@ func (e *Environment) GetStackName(suffix string) string {
 
 // GetEnvironmentFromContext extracts environment information from CDK context
 func GetEnvironmentFromContext(app awscdk.App) Environment {
+	env := Environment{
+		Name:      "unknown",
+		IsPreview: false,
+	}
+
 	// Add nil check for app
 	if app == nil {
-		return Environment{
-			Name:      "unknown",
-			IsPreview: false,
-			Username:  getCurrentUsername(),
-		}
+		return env
 	}
 
 	envName := app.Node().TryGetContext(jsii.String("environment"))
@@ -88,10 +89,7 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 	println("Environment IsPreview:", prNumber)
 	println("Environment sha:", sha)
 
-	env := Environment{
-		Name:      "development",
-		IsPreview: false,
-	}
+	env = Environment{}
 
 	if envName != nil {
 		if nameStr, ok := envName.(string); ok {
