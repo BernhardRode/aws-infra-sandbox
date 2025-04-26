@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.1.0](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.0.0...v1.1.0) (2025-04-26)
+
+
+### Features
+
+* add DNS setup for ebbo.dev domain ([c6ed8d5](https://github.com/BernhardRode/aws-infra-sandbox/commit/c6ed8d5dde93680c6acaf317aa3d9f145832704f))
+* add hosted zone ([1c096e5](https://github.com/BernhardRode/aws-infra-sandbox/commit/1c096e540524421c697bae09b6f17d3160d01c21))
+* use only arm64 runners ([90ae376](https://github.com/BernhardRode/aws-infra-sandbox/commit/90ae37620a43a2aa60cced0757bf3b10d771269c))
+
+
+### Bug Fixes
+
+* close the pr and tear down infra ([8190f95](https://github.com/BernhardRode/aws-infra-sandbox/commit/8190f95c930cd7ec4b6586278a9d815fb3541b76))
+* correct TTL variable substitution in DNS setup script ([a466281](https://github.com/BernhardRode/aws-infra-sandbox/commit/a466281ce4eb0c8075f0a42f0bca720dbd3b4c95))
+* rename variable ([7c38001](https://github.com/BernhardRode/aws-infra-sandbox/commit/7c380013686aebc6eaa1a9987ae607ddab94af0d))
+* split create and delete of pr env ([1b9e6ff](https://github.com/BernhardRode/aws-infra-sandbox/commit/1b9e6fffd2f39a1ced4cf4a459e8c9a59b4e0584))
+* update DNS setup script to properly format change batch ([c58b370](https://github.com/BernhardRode/aws-infra-sandbox/commit/c58b3700c60a928f5c8c3949729ad75f5ce627c5))
+* update Lambda asset path to use correct build directory ([69a2613](https://github.com/BernhardRode/aws-infra-sandbox/commit/69a2613bdb0d34a938690db639ac0ae2028f5dad))
+
 ## 1.0.0 (2025-04-26)
 
 
