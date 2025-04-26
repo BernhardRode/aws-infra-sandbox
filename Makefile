@@ -2,8 +2,8 @@
 CDK_DIR = infra
 FUNCTIONS_DIR = functions
 BUILD_DIR = build
-BIN_DIR = $(shell pwd)/$(BUILD_DIR)/bin
-DIST_DIR = $(shell pwd)/$(BUILD_DIR)/dist
+BIN_DIR = $(BUILD_DIR)/bin
+DIST_DIR = $(BUILD_DIR)/dist
 
 # Go build flags
 GOOS = linux
@@ -13,21 +13,18 @@ CGO_ENABLED = 0
 # AWS CDK commands
 CDK = cdk
 CDK_APP = $(shell pwd)/$(CDK_DIR)/aws-infra-sandbox.go
-CDK_BIN = $(BIN_DIR)/aws-infra-sandbox
-
-# Get the current username from the environment
-USERNAME := $(shell whoami)
 
 # Environment settings
+USERNAME = ebbo
 DEV_STACK_NAME = $(USERNAME)-dev
 
 # Get function names
 FUNCTION_NAMES = $(notdir $(wildcard $(FUNCTIONS_DIR)/*))
 
-.PHONY: all clean build deploy destroy dev-deploy dev-destroy dev-diff watch-dev watch-dev-poll create update dev-create dev-update watch lambdas cdk-synth cdk-diff $(FUNCTION_NAMES)
+.PHONY: all clean build deploy destroy dev-deploy dev-destroy dev-diff watch-dev watch-dev-poll create update dev-create dev-update watch lambdas cdk-synth cdk-diff $(FUNCTION_NAMES) setup-github bootstrap-cdk setup
 
 # Default target
-all: clean build
+all: clean build deploy
 
 # Create build directories
 $(BUILD_DIR):
@@ -57,11 +54,11 @@ lambdas: $(BIN_DIR) $(DIST_DIR)
 			go mod init $(FUNCTIONS_DIR)/$$func; \
 			go mod tidy; \
 		fi && \
-		GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go build -o $(BIN_DIR)/$$func && \
-		cd $(BIN_DIR) && \
+		GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go build -o $(CURDIR)/$(BIN_DIR)/$$func && \
+		cd $(CURDIR)/$(BIN_DIR) && \
 		cp $$func bootstrap && \
 		chmod 755 bootstrap && \
-		zip -j $(DIST_DIR)/$$func.zip bootstrap && \
+		zip -j $(CURDIR)/$(DIST_DIR)/$$func.zip bootstrap && \
 		rm bootstrap && \
 		echo "Lambda build complete: $$func"; \
 	done
@@ -76,9 +73,8 @@ build: $(BIN_DIR) lambdas
 		go mod init aws-infra-sandbox && \
 		go mod tidy; \
 	fi && \
-	go build -o $(CDK_BIN)
-	chmod +x $(CDK_BIN)
-	@echo "CDK app built: $(CDK_BIN)"
+	go build -o $(CURDIR)/$(BIN_DIR)/aws-infra-sandbox
+	@echo "Build complete"
 
 # Create a new stack (alias for deploy)
 create: deploy
@@ -89,31 +85,29 @@ update: deploy
 # CDK commands
 cdk-synth:
 	@echo "Synthesizing CDK stack..."
-	$(CDK) synth --app $(CDK_BIN)
+	$(CDK) synth --app "go run $(CDK_APP)"
 
 cdk-diff:
 	@echo "Showing CDK diff..."
-	$(CDK) diff --app $(CDK_BIN)
+	$(CDK) diff --app "go run $(CDK_APP)"
 
-# Deploy the stack with the username in the stack name
+# Deploy the stack
 deploy: build
 	@echo "Deploying stack..."
-	cd $(CDK_DIR) && $(CDK) deploy --app $(CDK_BIN) --all \
-		--require-approval never \
-		--context environment=development \
-		--context username=$(USERNAME)
+	@echo "Running CDK deploy with app: $(CDK_APP)"
+	cd $(CDK_DIR) && $(CDK) deploy --app "go run aws-infra-sandbox.go" --require-approval never
 
 # Destroy the stack
 destroy:
 	@echo "Destroying stack..."
-	$(CDK) destroy --app $(CDK_BIN) --force
+	$(CDK) destroy --app "go run $(CDK_APP)" --force
 
 # Development environment commands
 dev-deploy: build
 	@echo "Deploying development stack for $(USERNAME)..."
-	cd $(CDK_DIR) && $(CDK) deploy --app $(CDK_BIN) --all \
+	cd $(CDK_DIR) && $(CDK) deploy --app "go run aws-infra-sandbox.go" \
 		--require-approval never \
-		--context environment=development \
+		--context environment=dev \
 		--context username=$(USERNAME)
 
 dev-create: dev-deploy
@@ -122,17 +116,15 @@ dev-update: dev-deploy
 
 dev-destroy:
 	@echo "Destroying development stack for $(USERNAME)..."
-	cd $(CDK_DIR) && $(CDK) destroy --app $(CDK_BIN) \
+	cd $(CDK_DIR) && $(CDK) destroy --app "go run aws-infra-sandbox.go" \
 		--force \
-		--require-approval never \
-		--context environment=development \
+		--context environment=dev \
 		--context username=$(USERNAME)
 
 dev-diff: build
 	@echo "Showing diff for development stack..."
-	cd $(CDK_DIR) && $(CDK) diff --app $(CDK_BIN) \
-		--require-approval never \
-		--context environment=development \
+	cd $(CDK_DIR) && $(CDK) diff --app "go run aws-infra-sandbox.go" \
+		--context environment=dev \
 		--context username=$(USERNAME)
 
 # Watch mode for development
@@ -193,6 +185,21 @@ list-functions:
 		echo "  $$func"; \
 	done
 
+# Setup GitHub Actions with AWS IAM Identity Federation
+setup-github:
+	@echo "Setting up GitHub Actions with AWS IAM Identity Federation..."
+	@./scripts/setup-github-aws-federation.sh
+
+# Bootstrap CDK for deployments
+bootstrap-cdk:
+	@echo "Bootstrapping CDK in your AWS account..."
+	@./scripts/bootstrap-cdk.sh
+
+# Complete setup for GitHub Actions and CDK
+setup:
+	@echo "Setting up GitHub Actions with AWS IAM Identity Federation and CDK Bootstrap..."
+	@./scripts/setup-github-aws-complete.sh
+
 # Help target
 help:
 	@echo "Available targets:"
@@ -218,12 +225,4 @@ help:
 	@echo "  list-functions - List all available functions"
 	@echo "  setup-github   - Set up GitHub Actions with AWS IAM Identity Federation"
 	@echo "  bootstrap-cdk  - Bootstrap CDK in your AWS account"
-# Setup GitHub Actions with AWS IAM Identity Federation
-setup-github:
-	@echo "Setting up GitHub Actions with AWS IAM Identity Federation..."
-	@./scripts/setup-github-aws-federation.sh
-	@echo "  setup-github    - Set up GitHub Actions with AWS IAM Identity Federation"
-# Bootstrap CDK for deployments
-bootstrap-cdk:
-	@echo "Bootstrapping CDK in your AWS account..."
-	@./scripts/bootstrap-cdk.sh
+	@echo "  setup          - Complete setup for GitHub Actions and CDK (recommended)"

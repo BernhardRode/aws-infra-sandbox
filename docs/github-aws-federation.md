@@ -254,3 +254,20 @@ current credentials could not be used to assume 'arn:aws:iam::***:role/cdk-hnb65
 ```
 
 Run the `bootstrap-cdk` command to fix these permission issues.
+## Combined Setup (Recommended)
+
+For the smoothest experience, use the combined setup command that handles both GitHub Actions configuration and CDK bootstrapping in one step:
+
+```bash
+make setup
+```
+
+This single command will:
+
+1. Set up the OIDC provider for GitHub Actions
+2. Create IAM roles with appropriate permissions
+3. Bootstrap CDK in your AWS account
+4. Configure GitHub repository secrets
+5. Set up all necessary trust relationships and permissions
+
+This is the recommended approach for new projects.

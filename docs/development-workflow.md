@@ -215,3 +215,12 @@ make bootstrap-cdk
 ```
 
 This command sets up the necessary resources in your AWS account for CDK deployments and configures the appropriate permissions for GitHub Actions.
+## One-Step Setup (Recommended)
+
+For the easiest setup experience, use the combined setup command:
+
+```bash
+make setup
+```
+
+This single command sets up both GitHub Actions with AWS IAM Identity Federation and bootstraps CDK in your AWS account. It's the recommended approach for new projects.
