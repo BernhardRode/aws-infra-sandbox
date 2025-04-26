@@ -196,6 +196,11 @@ create_iam_roles() {
       --role-name GitHubActionsPreviewStaging \
       --policy-arn arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
     
+    # Attach SSM permissions for CDK bootstrap version checking
+    aws iam attach-role-policy \
+      --role-name GitHubActionsPreviewStaging \
+      --policy-arn arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+    
     PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
     echo -e "${GREEN}Role GitHubActionsPreviewStaging created successfully.${NC}"
   fi
@@ -233,6 +238,11 @@ create_iam_roles() {
     aws iam attach-role-policy \
       --role-name GitHubActionsProduction \
       --policy-arn arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+    
+    # Attach SSM permissions for CDK bootstrap version checking
+    aws iam attach-role-policy \
+      --role-name GitHubActionsProduction \
+      --policy-arn arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
     
     PRODUCTION_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsProduction --query "Role.Arn" --output text)
     echo -e "${GREEN}Role GitHubActionsProduction created successfully.${NC}"

@@ -217,8 +217,13 @@ help:
 	@echo "  cdk-diff       - Show changes to be deployed"
 	@echo "  list-functions - List all available functions"
 	@echo "  setup-github   - Set up GitHub Actions with AWS IAM Identity Federation"
+	@echo "  bootstrap-cdk  - Bootstrap CDK in your AWS account"
 # Setup GitHub Actions with AWS IAM Identity Federation
 setup-github:
 	@echo "Setting up GitHub Actions with AWS IAM Identity Federation..."
 	@./scripts/setup-github-aws-federation.sh
 	@echo "  setup-github    - Set up GitHub Actions with AWS IAM Identity Federation"
+# Bootstrap CDK for deployments
+bootstrap-cdk:
+	@echo "Bootstrapping CDK in your AWS account..."
+	@./scripts/bootstrap-cdk.sh

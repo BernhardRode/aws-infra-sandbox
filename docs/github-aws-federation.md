@@ -224,3 +224,33 @@ This command will:
 - Git repository with a remote pointing to GitHub
 
 If the GitHub CLI is not available, the script will provide instructions for manually setting up the GitHub repository secrets.
+
+## CDK Bootstrap Setup
+
+For CDK deployments to work properly with GitHub Actions, you need to bootstrap your AWS account with the appropriate permissions. This project includes a command to handle this:
+
+```bash
+make bootstrap-cdk
+```
+
+This command will:
+
+1. Bootstrap CDK in your AWS account
+2. Configure the necessary trust relationships for CDK roles
+3. Add required permissions to the GitHub Actions roles for accessing CDK bootstrap resources
+
+### Common CDK Bootstrap Issues
+
+If you encounter errors like:
+
+```
+AccessDeniedException: User is not authorized to perform: ssm:GetParameter on resource: arn:aws:ssm:***:parameter/cdk-bootstrap/hnb659fds/version
+```
+
+Or:
+
+```
+current credentials could not be used to assume 'arn:aws:iam::***:role/cdk-hnb659fds-deploy-role-***'
+```
+
+Run the `bootstrap-cdk` command to fix these permission issues.

@@ -206,3 +206,12 @@ make setup-github
 ```
 
 This command configures the necessary AWS resources and GitHub repository secrets for secure authentication between GitHub Actions and AWS. See [GitHub Actions with AWS IAM Identity Federation](./github-aws-federation.md) for more details.
+## Bootstrapping CDK
+
+Before deploying with CDK for the first time, you need to bootstrap your AWS account:
+
+```bash
+make bootstrap-cdk
+```
+
+This command sets up the necessary resources in your AWS account for CDK deployments and configures the appropriate permissions for GitHub Actions.
