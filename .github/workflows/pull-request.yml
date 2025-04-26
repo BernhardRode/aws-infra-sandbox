@@ -13,13 +13,13 @@ permissions:
 
 # Import shared configuration
 jobs:
-  # unit-tests:
-  #   name: Run Unit Tests
-  #   uses: ./.github/workflows/reusable-test.yml
+  unit-tests:
+    name: Run Unit Tests
+    uses: ./.github/workflows/reusable-test.yml
 
   deploy-pr:
     name: Deploy PR PR
-    # needs: unit-tests
+    needs: unit-tests
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: pr
@@ -56,24 +56,3 @@ jobs:
               repo: context.repo.repo,
               body: body
             });
-
-  cleanup-pr:
-    name: Cleanup PR on PR Close
-    if: github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEVELOPMENT }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Install CDK
-        run: npm install -g aws-cdk
-
-      - name: Destroy PR PR
-        run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          echo "Destroying PR pr for PR #${PR_NUMBER}"
-          
-          make pr-destroy PR_NUMBER=${PR_NUMBER}
