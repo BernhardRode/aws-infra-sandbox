@@ -84,11 +84,13 @@ jobs:
           
           # Execute the deployment
           $DEPLOY_CMD
+
+          ls
           
           # Extract and format outputs for PR comment if outputs file exists
-          if [ -n "${{ inputs.outputs-file }}" ] && [ -f "${{ inputs.outputs-file }}" ]; then
-            OUTPUTS=$(cat ${{ inputs.outputs-file }} | jq -r 'to_entries[] | "\(.key): \(.value.value)"')
-            echo "outputs<<EOF" >> $GITHUB_OUTPUT
-            echo "$OUTPUTS" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          fi
+          # if [ -n "${{ inputs.outputs-file }}" ] && [ -f "${{ inputs.outputs-file }}" ]; then
+          #   OUTPUTS=$(cat ${{ inputs.outputs-file }} | jq -r 'to_entries[] | "\(.key): \(.value.value)"')
+          #   echo "outputs<<EOF" >> $GITHUB_OUTPUT
+          #   echo "$OUTPUTS" >> $GITHUB_OUTPUT
+          #   echo "EOF" >> $GITHUB_OUTPUT
+          # fi
