@@ -39,6 +39,7 @@ jobs:
       environment: staging
       role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
       version: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit
 
   test-staging:
     name: Test Staging Deployment
