@@ -21,3 +21,7 @@ build
 # CDK output
 cdk.out/
 build/cdk.out/
+
+# Ensure no build artifacts are committed
+build/
+infra/aws-infra-sandbox
