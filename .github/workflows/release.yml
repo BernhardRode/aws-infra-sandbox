@@ -6,7 +6,12 @@ on:
       - main
 
 jobs:
+  setup:
+    name: Setup Environment
+    uses: ./.github/workflows/reusable-setup.yml
+
   unit-tests:
+    needs: setup
     name: Run Unit Tests
     uses: ./.github/workflows/reusable-test.yml
 
