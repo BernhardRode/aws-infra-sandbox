@@ -75,22 +75,7 @@ jobs:
             DEPLOY_CMD="$DEPLOY_CMD PR_NUMBER=${{ inputs.pr-number }}"
           fi
           
-          # Add outputs file if provided
-          if [ -n "${{ inputs.outputs-file }}" ]; then
-            DEPLOY_CMD="$DEPLOY_CMD -- --outputs-file ${{ inputs.outputs-file }}"
-          fi
-          
           echo "Deploying to ${{ inputs.environment }} with command: $DEPLOY_CMD"
           
           # Execute the deployment
           $DEPLOY_CMD
-
-          ls
-          
-          # Extract and format outputs for PR comment if outputs file exists
-          # if [ -n "${{ inputs.outputs-file }}" ] && [ -f "${{ inputs.outputs-file }}" ]; then
-          #   OUTPUTS=$(cat ${{ inputs.outputs-file }} | jq -r 'to_entries[] | "\(.key): \(.value.value)"')
-          #   echo "outputs<<EOF" >> $GITHUB_OUTPUT
-          #   echo "$OUTPUTS" >> $GITHUB_OUTPUT
-          #   echo "EOF" >> $GITHUB_OUTPUT
-          # fi
