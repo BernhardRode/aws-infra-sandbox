@@ -53,6 +53,9 @@ check_domain() {
 # Add A and AAAA records
 add_dns_records() {
   echo -e "${BLUE}Adding DNS records for ${DOMAIN}...${NC}"
+
+  TTL=300
+  # Define the hosted zone ID (replace with your actual hosted zone ID)
   
   # A Records - IPv4 addresses
   IPV4_ADDRESSES=(
@@ -77,53 +80,70 @@ add_dns_records() {
     "Comment": "Adding A and AAAA records for '"${DOMAIN}"'",
     "Changes": [' > $TEMP_FILE
   
-  # Add A records
-  for i in "${!IPV4_ADDRESSES[@]}"; do
-    echo '      {
+  # Add A records (all in one resource record set)
+  echo '      {
         "Action": "UPSERT",
         "ResourceRecordSet": {
           "Name": "'"${DOMAIN}"'",
           "Type": "A",
           "TTL": 300,
-          "ResourceRecords": [
-            {
+          "ResourceRecords": [' >> $TEMP_FILE
+  
+  # Add all IPv4 addresses
+  for i in "${!IPV4_ADDRESSES[@]}"; do
+    echo '            {
               "Value": "'"${IPV4_ADDRESSES[$i]}"'"
-            }
-          ]
-        }
-      }' >> $TEMP_FILE
+            }' >> $TEMP_FILE
     
-    # Add comma if not the last item and if there are AAAA records
-    if [ $i -lt $((${#IPV4_ADDRESSES[@]} - 1)) ] || [ ${#IPV6_ADDRESSES[@]} -gt 0 ]; then
+    # Add comma if not the last item
+    if [ $i -lt $((${#IPV4_ADDRESSES[@]} - 1)) ]; then
       echo ',' >> $TEMP_FILE
     fi
   done
   
-  # Add AAAA records
-  for i in "${!IPV6_ADDRESSES[@]}"; do
+  echo '          ]
+        }
+      }' >> $TEMP_FILE
+  
+  # Add comma between A and AAAA records if AAAA records exist
+  if [ ${#IPV6_ADDRESSES[@]} -gt 0 ]; then
+    echo ',' >> $TEMP_FILE
+  fi
+  
+  # Add AAAA records (all in one resource record set)
+  if [ ${#IPV6_ADDRESSES[@]} -gt 0 ]; then
     echo '      {
         "Action": "UPSERT",
         "ResourceRecordSet": {
           "Name": "'"${DOMAIN}"'",
           "Type": "AAAA",
           "TTL": 300,
-          "ResourceRecords": [
-            {
+          "ResourceRecords": [' >> $TEMP_FILE
+    
+    # Add all IPv6 addresses
+    for i in "${!IPV6_ADDRESSES[@]}"; do
+      echo '            {
               "Value": "'"${IPV6_ADDRESSES[$i]}"'"
-            }
-          ]
+            }' >> $TEMP_FILE
+      
+      # Add comma if not the last item
+      if [ $i -lt $((${#IPV6_ADDRESSES[@]} - 1)) ]; then
+        echo ',' >> $TEMP_FILE
+      fi
+    done
+    
+    echo '          ]
         }
       }' >> $TEMP_FILE
-    
-    # Add comma if not the last item
-    if [ $i -lt $((${#IPV6_ADDRESSES[@]} - 1)) ]; then
-      echo ',' >> $TEMP_FILE
-    fi
-  done
+  fi
   
   echo '
     ]
   }' >> $TEMP_FILE
+  
+  # Debug: Show the change batch file
+  echo -e "${BLUE}Change batch file content:${NC}"
+  cat $TEMP_FILE
   
   # Apply the changes
   echo -e "${BLUE}Applying DNS changes to Route 53...${NC}"
