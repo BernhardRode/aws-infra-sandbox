@@ -76,7 +76,7 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 		// Create API Gateway with Lambda integration
 		api := awsapigateway.NewLambdaRestApi(stack, jsii.String(folder+"Endpoint"), &awsapigateway.LambdaRestApiProps{
 			Handler:     lambdaFn,
-			RestApiName: jsii.String(folder),
+			RestApiName: jsii.String(apiName),
 		})
 
 		// Add API URL as stack output
