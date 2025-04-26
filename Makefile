@@ -137,6 +137,9 @@ watch-dev:
 	@echo "Watching for changes and deploying to development environment..."
 	@echo "Press Ctrl+C to stop watching"
 	@echo "Note: This requires inotifywait. Install with: sudo apt-get install inotify-tools"
+	@echo "Note: Not needed in CICD, as it will be handled by GitHub Actions"
+	@echo "Note: This is a development-only feature and should not be used in production"
+	@echo "Note: This will only work on Linux and MacOS"
 	@if command -v inotifywait > /dev/null; then \
 		touch .watch-timestamp; \
 		while true; do \

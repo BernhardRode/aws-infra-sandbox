@@ -16,7 +16,7 @@ A CDK Go project with GitHub Actions CI/CD for automated deployments across mult
 - AWS CLI configured with appropriate credentials
 - Go 1.21 or later
 - AWS CDK CLI installed (`npm install -g aws-cdk`)
-- Optional: inotify-tools for efficient file watching (Linux only)
+- Optional (development only): inotify-tools for efficient file watching (Linux only/Not in CICD)
 
 ### Quick Start
 
