@@ -57,5 +57,5 @@ jobs:
           echo "✅ All unit tests passed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- **Go Version:** ${{ inputs.go-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Go Version:** $(go version)" >> $GITHUB_STEP_SUMMARY
           echo "- **Test Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

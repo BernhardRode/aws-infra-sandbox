@@ -24,9 +24,10 @@ jobs:
     with:
       environment: preview
       pr-number: ${{ github.event.pull_request.number }}
-      role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       outputs-file: pr-outputs.json
-    secrets: inherit
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
 
   comment-pr:
     name: Comment on PR
