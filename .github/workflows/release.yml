@@ -53,7 +53,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: staging
@@ -66,7 +66,7 @@ jobs:
     name: Test Staging Deployment
     needs: [release-please, deploy-staging]
     runs-on: ubuntu-24.04-arm
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     outputs:
       tests_passed: ${{ steps.integration_tests.outputs.tests_passed }}
     
@@ -101,7 +101,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     needs: [release-please, test-staging]
-    if: ${{ needs.release-please.outputs.release_created && needs.test-staging.outputs.tests_passed == 'true' }}
+    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.test-staging.outputs.tests_passed == 'true' }}
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: production
