@@ -4,6 +4,7 @@ FUNCTIONS_DIR = functions
 BUILD_DIR = build
 BIN_DIR = $(BUILD_DIR)/bin
 DIST_DIR = $(BUILD_DIR)/dist
+CDK_OUT_DIR = $(BUILD_DIR)/cdk.out
 
 # Go build flags
 GOOS = linux
@@ -13,6 +14,7 @@ CGO_ENABLED = 0
 # AWS CDK commands
 CDK = cdk
 CDK_APP = $(shell pwd)/$(CDK_DIR)/aws-infra-sandbox.go
+CDK_OUTDIR_OPTION = --output $(CDK_OUT_DIR)
 
 # Environment settings
 USERNAME = ebbo
@@ -36,11 +38,13 @@ $(BIN_DIR):
 $(DIST_DIR):
 	mkdir -p $(DIST_DIR)
 
+$(CDK_OUT_DIR):
+	mkdir -p $(CDK_OUT_DIR)
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning..."
 	rm -rf $(BUILD_DIR)
-	rm -rf cdk.out
 	rm -f infra/aws-infra-sandbox
 	@echo "Clean complete"
 
@@ -83,29 +87,29 @@ create: deploy
 update: deploy
 
 # CDK commands
-cdk-synth:
+cdk-synth: $(CDK_OUT_DIR)
 	@echo "Synthesizing CDK stack..."
-	$(CDK) synth --app "go run $(CDK_APP)"
+	$(CDK) synth --app "go run $(CDK_APP)" $(CDK_OUTDIR_OPTION)
 
-cdk-diff:
+cdk-diff: $(CDK_OUT_DIR)
 	@echo "Showing CDK diff..."
-	$(CDK) diff --app "go run $(CDK_APP)"
+	$(CDK) diff --app "go run $(CDK_APP)" $(CDK_OUTDIR_OPTION)
 
 # Deploy the stack
-deploy: build
+deploy: build $(CDK_OUT_DIR)
 	@echo "Deploying stack..."
 	@echo "Running CDK deploy with app: $(CDK_APP)"
-	cd $(CDK_DIR) && $(CDK) deploy --app "go run aws-infra-sandbox.go" --require-approval never
+	cd $(CDK_DIR) && $(CDK) deploy --app "go run aws-infra-sandbox.go" $(CDK_OUTDIR_OPTION) --require-approval never
 
 # Destroy the stack
-destroy:
+destroy: $(CDK_OUT_DIR)
 	@echo "Destroying stack..."
-	$(CDK) destroy --app "go run $(CDK_APP)" --force
+	$(CDK) destroy --app "go run $(CDK_APP)" $(CDK_OUTDIR_OPTION) --force
 
 # Development environment commands
-dev-deploy: build
+dev-deploy: build $(CDK_OUT_DIR)
 	@echo "Deploying development stack for $(USERNAME)..."
-	cd $(CDK_DIR) && $(CDK) deploy --app "go run aws-infra-sandbox.go" \
+	cd $(CDK_DIR) && $(CDK) deploy --app "go run aws-infra-sandbox.go" $(CDK_OUTDIR_OPTION) \
 		--require-approval never \
 		--context environment=dev \
 		--context username=$(USERNAME)
@@ -114,16 +118,16 @@ dev-create: dev-deploy
 
 dev-update: dev-deploy
 
-dev-destroy:
+dev-destroy: $(CDK_OUT_DIR)
 	@echo "Destroying development stack for $(USERNAME)..."
-	cd $(CDK_DIR) && $(CDK) destroy --app "go run aws-infra-sandbox.go" \
+	cd $(CDK_DIR) && $(CDK) destroy --app "go run aws-infra-sandbox.go" $(CDK_OUTDIR_OPTION) \
 		--force \
 		--context environment=dev \
 		--context username=$(USERNAME)
 
-dev-diff: build
+dev-diff: build $(CDK_OUT_DIR)
 	@echo "Showing diff for development stack..."
-	cd $(CDK_DIR) && $(CDK) diff --app "go run aws-infra-sandbox.go" \
+	cd $(CDK_DIR) && $(CDK) diff --app "go run aws-infra-sandbox.go" $(CDK_OUTDIR_OPTION) \
 		--context environment=dev \
 		--context username=$(USERNAME)
 
