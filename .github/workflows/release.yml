@@ -33,17 +33,7 @@ jobs:
         with:
           token: ${{ steps.generate_token.outputs.token }}
           release-type: go
-          package-name: aws-infra-sandbox
-          changelog-types: |
-            [
-              {"type":"feat","section":"Features","hidden":false},
-              {"type":"fix","section":"Bug Fixes","hidden":false},
-              {"type":"chore","section":"Miscellaneous","hidden":false},
-              {"type":"docs","section":"Documentation","hidden":false},
-              {"type":"perf","section":"Performance Improvements","hidden":false},
-              {"type":"refactor","section":"Code Refactoring","hidden":false}
-            ]
-
+          
   deploy-production:
     name: Deploy to Production
     needs: release-please

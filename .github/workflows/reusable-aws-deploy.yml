@@ -92,7 +92,7 @@ jobs:
           fi
           
           echo "Deploying to ${{ inputs.environment }} with context: $CONTEXT_ARGS"
-          make deploy -- $CONTEXT_ARGS $OUTPUTS_ARG
+          make deploy -- $CONTEXT_ARGS $OUTPUTS_ARG --all
           
           # Extract and format outputs for PR comment if outputs file exists
           if [ -n "${{ inputs.outputs-file }}" ] && [ -f "${{ inputs.outputs-file }}" ]; then
