@@ -57,25 +57,18 @@ add_dns_records() {
   
   # A Records - IPv4 addresses
   IPV4_ADDRESSES=(
-185.199.108.153
-185.199.109.153
-185.199.110.153
-185.199.111.153
-
-To create AAAA records, point your apex domain to the IP addresses for GitHub Pages.
-
-2606:50c0:8000::153
-2606:50c0:8001::153
-2606:50c0:8002::153
-2606:50c0:8003::153
+    "185.199.108.153"
+    "185.199.109.153"
+    "185.199.110.153"
+    "185.199.111.153"
   )
   
   # AAAA Records - IPv6 addresses
   IPV6_ADDRESSES=(
-    "2606:1a40:1:7::1"
-    "2606:1a40:1:7::2"
-    "2606:1a40:1:7::3"
-    "2606:1a40:1:7::4"
+    "2606:50c0:8000::153"
+    "2606:50c0:8001::153"
+    "2606:50c0:8002::153"
+    "2606:50c0:8003::153"
   )
   
   # Create change batch file for Route 53
