@@ -200,10 +200,16 @@ bootstrap-cdk:
 	@echo "Bootstrapping CDK in your AWS account..."
 	@./scripts/bootstrap-cdk.sh
 
+# Setup DNS records for ebbo.dev
+setup-dns:
+	@echo "Setting up DNS records for ebbo.dev..."
+	@./scripts/setup-dns-records.sh
+
 # Complete setup for GitHub Actions and CDK
 setup:
-	@echo "Setting up GitHub Actions with AWS IAM Identity Federation and CDK Bootstrap..."
+	@echo "Setting up GitHub Actions with AWS IAM Identity Federation, CDK Bootstrap, and DNS records..."
 	@./scripts/setup-github-aws-complete.sh
+	@./scripts/setup-dns-records.sh
 
 # Help target
 help:
@@ -230,4 +236,5 @@ help:
 	@echo "  list-functions - List all available functions"
 	@echo "  setup-github   - Set up GitHub Actions with AWS IAM Identity Federation"
 	@echo "  bootstrap-cdk  - Bootstrap CDK in your AWS account"
-	@echo "  setup          - Complete setup for GitHub Actions and CDK (recommended)"
+	@echo "  setup-dns      - Set up DNS records for ebbo.dev domain"
+	@echo "  setup          - Complete setup for GitHub Actions, CDK, and DNS (recommended)"
