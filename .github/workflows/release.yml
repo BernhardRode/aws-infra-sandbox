@@ -46,7 +46,7 @@ jobs:
       go-version: ${{ github.event.inputs.go-version }}
       skip-tests: true  # Tests already ran in the unit-tests job
       role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-      aws-region: ${{ secrets.AWS_REGION }}
+      aws-region: 'eu-central-1'
 
   test-staging:
     name: Test Staging Deployment
@@ -72,7 +72,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: 'eu-central-1'
       
       - name: Run Integration Tests
         id: integration_tests
@@ -104,4 +104,4 @@ jobs:
       go-version: ${{ github.event.inputs.go-version }}
       skip-tests: true  # Tests already ran in the unit-tests job
       role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
-      aws-region: ${{ secrets.AWS_REGION }}
+      aws-region: 'eu-central-1'
