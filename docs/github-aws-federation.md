@@ -29,7 +29,7 @@ aws iam create-open-id-connect-provider \
 
 #### Create Trust Policy Files
 
-Create a file named `trust-policy-preview-staging.json`:
+Create a file named `trust-policy-pr-staging.json`:
 
 ```json
 {
@@ -80,10 +80,10 @@ Create a file named `trust-policy-production.json` with stricter conditions:
 #### Create IAM Roles
 
 ```bash
-# Create role for preview/staging environments
+# Create role for pr/staging environments
 aws iam create-role \
-  --role-name GitHubActionsPreviewStaging \
-  --assume-role-policy-document file://trust-policy-preview-staging.json
+  --role-name GitHubActionsPRStaging \
+  --assume-role-policy-document file://trust-policy-pr-staging.json
 
 # Create role for production environment
 aws iam create-role \
@@ -94,25 +94,25 @@ aws iam create-role \
 ### 3. Attach Policies to the Roles
 
 ```bash
-# Attach policies to preview/staging role
+# Attach policies to pr/staging role
 aws iam attach-role-policy \
-  --role-name GitHubActionsPreviewStaging \
+  --role-name GitHubActionsPRStaging \
   --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
 
 aws iam attach-role-policy \
-  --role-name GitHubActionsPreviewStaging \
+  --role-name GitHubActionsPRStaging \
   --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
 
 aws iam attach-role-policy \
-  --role-name GitHubActionsPreviewStaging \
+  --role-name GitHubActionsPRStaging \
   --policy-arn arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
 
 aws iam attach-role-policy \
-  --role-name GitHubActionsPreviewStaging \
+  --role-name GitHubActionsPRStaging \
   --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess
 
 aws iam attach-role-policy \
-  --role-name GitHubActionsPreviewStaging \
+  --role-name GitHubActionsPRStaging \
   --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
 
 # Attach policies to production role (same policies)
@@ -146,7 +146,7 @@ In your GitHub repository, add the following secrets:
 1. Go to your repository → Settings → Secrets and variables → Actions
 2. Add the following repository secrets:
 
-- `AWS_ROLE_TO_ASSUME`: `arn:aws:iam::<ACCOUNT_ID>:role/GitHubActionsPreviewStaging`
+- `AWS_ROLE_TO_ASSUME`: `arn:aws:iam::<ACCOUNT_ID>:role/GitHubActionsPRStaging`
 - `AWS_ROLE_TO_ASSUME_PROD`: `arn:aws:iam::<ACCOUNT_ID>:role/GitHubActionsProduction`
 - `AWS_REGION`: Your AWS region (e.g., `eu-central-1`)
 
@@ -213,7 +213,7 @@ make setup-github
 This command will:
 
 1. Create an IAM OIDC Identity Provider for GitHub Actions
-2. Create IAM roles for preview/staging and production environments
+2. Create IAM roles for pr/staging and production environments
 3. Set up the necessary trust policies
 4. Configure GitHub repository secrets
 

@@ -27,7 +27,7 @@ SHA ?= $(shell git rev-parse --short HEAD)
 FUNCTION_NAMES = $(notdir $(wildcard $(FUNCTIONS_DIR)/*))
 
 # Define targets for different environments
-.PHONY: all clean build deploy destroy dev-deploy dev-destroy dev-diff watch-dev watch-dev-poll create update dev-create dev-update watch lambdas cdk-synth cdk-diff $(FUNCTION_NAMES) setup-github bootstrap-cdk setup preview-deploy preview-destroy
+.PHONY: all clean build deploy destroy dev-deploy dev-destroy dev-diff watch-dev watch-dev-poll create update dev-create dev-update watch lambdas cdk-synth cdk-diff $(FUNCTION_NAMES) setup-github bootstrap-cdk setup pr-deploy pr-destroy
 
 # Default target
 all: clean build deploy
@@ -128,12 +128,12 @@ dev-deploy: build $(CDK_OUT_DIR)
 		--context username=$(USERNAME) \
 		$(if $(SHA),--context sha=$(SHA),)
 
-# Preview environment commands
-preview-deploy:
-	@$(MAKE) deploy ENVIRONMENT=preview $(if $(PR_NUMBER),,$(error PR_NUMBER is required for preview environment))
+# PR environment commands
+pr-deploy:
+	@$(MAKE) deploy ENVIRONMENT=pr $(if $(PR_NUMBER),,$(error PR_NUMBER is required for pr environment))
 
-preview-destroy:
-	@$(MAKE) destroy ENVIRONMENT=preview $(if $(PR_NUMBER),,$(error PR_NUMBER is required for preview environment))
+pr-destroy:
+	@$(MAKE) destroy ENVIRONMENT=pr $(if $(PR_NUMBER),,$(error PR_NUMBER is required for pr environment))
 
 dev-create: dev-deploy
 
@@ -240,10 +240,10 @@ help:
 	@echo "  lambdas        - Build all Lambda functions"
 	@echo "  create         - Create a new stack (alias for deploy)"
 	@echo "  update         - Update an existing stack (alias for deploy)"
-	@echo "  deploy         - Deploy the stack to AWS (use ENVIRONMENT=preview|staging|production)"
-	@echo "  destroy        - Destroy the stack from AWS (use ENVIRONMENT=preview|staging|production)"
-	@echo "  preview-deploy - Deploy preview environment (requires PR_NUMBER)"
-	@echo "  preview-destroy - Destroy preview environment (requires PR_NUMBER)"
+	@echo "  deploy         - Deploy the stack to AWS (use ENVIRONMENT=pr|staging|production)"
+	@echo "  destroy        - Destroy the stack from AWS (use ENVIRONMENT=pr|staging|production)"
+	@echo "  pr-deploy - Deploy pr environment (requires PR_NUMBER)"
+	@echo "  pr-destroy - Destroy pr environment (requires PR_NUMBER)"
 	@echo "  dev-create     - Create development stack for $(USERNAME)"
 	@echo "  dev-update     - Update development stack for $(USERNAME)"
 	@echo "  dev-deploy     - Deploy development stack for $(USERNAME)"

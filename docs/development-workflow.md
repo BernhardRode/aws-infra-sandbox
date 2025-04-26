@@ -163,7 +163,7 @@ make test
    git push -u origin feature/my-new-feature
    ```
 
-4. A preview environment will be automatically deployed for your PR
+4. A pr environment will be automatically deployed for your PR
 
 5. After review and approval, merge your PR to main
 

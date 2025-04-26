@@ -12,7 +12,7 @@ Welcome to the documentation for the AWS Infrastructure Sandbox project. This do
 
 2. [CI/CD Workflow](./ci-cd-workflow.md)
    - GitHub Actions workflows
-   - PR preview environments
+   - PR pr environments
    - Staging and production deployments
    - Conventional commits
 
@@ -49,7 +49,7 @@ When contributing to this project:
 1. Create a new branch for your feature or fix
 2. Use conventional commits for your commit messages
 3. Open a PR against the main branch
-4. Review the automatically deployed preview environment
+4. Review the automatically deployed pr environment
 5. Address any feedback from reviewers
 
 ## Architecture

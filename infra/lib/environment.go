@@ -11,11 +11,11 @@ import (
 
 // Environment represents the deployment environment
 type Environment struct {
-	Name      string
-	PRNumber  string
-	Version   string
-	Username  string
-	IsPreview bool
+	Name     string
+	PRNumber string
+	Version  string
+	Username string
+	IsPR     bool
 }
 
 // getCurrentUsername retrieves the current username from the environment variables
@@ -46,10 +46,10 @@ func (e *Environment) GetStackName(suffix string) string {
 	println("Environment PRNumber:", e.PRNumber)
 	println("Environment Version:", e.Version)
 	println("Environment Username:", e.Username)
-	println("Environment IsPreview:", e.IsPreview)
+	println("Environment IsPR:", e.IsPR)
 	println("Environment Suffix:", suffix)
 
-	if e.Name == "preview" {
+	if e.Name == "pr" {
 		return e.Name + "-" + e.PRNumber + "-" + kebabCase(suffix)
 	}
 	if e.Name == "development" {
@@ -67,8 +67,8 @@ func (e *Environment) GetStackName(suffix string) string {
 // GetEnvironmentFromContext extracts environment information from CDK context
 func GetEnvironmentFromContext(app awscdk.App) Environment {
 	env := Environment{
-		Name:      "unknown",
-		IsPreview: false,
+		Name: "unknown",
+		IsPR: false,
 	}
 
 	// Add nil check for app
@@ -81,12 +81,6 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 	version := app.Node().TryGetContext(jsii.String("version"))
 	username := app.Node().TryGetContext(jsii.String("username"))
 	sha := app.Node().TryGetContext(jsii.String("sha"))
-
-	println("Environment envName:", envName)
-	println("Environment prNumber:", prNumber)
-	println("Environment version:", version)
-	println("Environment username:", username)
-	println("Environment sha:", sha)
 
 	env = Environment{}
 
@@ -102,7 +96,7 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 	if prNumber != nil {
 		if prStr, ok := prNumber.(string); ok {
 			env.PRNumber = prStr
-			env.IsPreview = true
+			env.IsPR = true
 		}
 	}
 
