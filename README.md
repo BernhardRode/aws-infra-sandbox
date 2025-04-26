@@ -4,7 +4,7 @@ A CDK Go project with GitHub Actions CI/CD for automated deployments across mult
 
 ## Features
 
-- **Multi-environment Infrastructure**: Development, Preview, Staging, and Production environments
+- **Multi-environment Infrastructure**: Development, PR, Staging, and Production environments
 - **GitHub Actions CI/CD**: Automated deployments for PRs, staging, and production
 - **AWS IAM Identity Federation**: Secure authentication without long-lived credentials
 - **Developer-friendly Workflow**: Easy local development with watch mode
@@ -46,7 +46,7 @@ See [Development Workflow](./docs/development-workflow.md) for more details.
 
 ## CI/CD Pipeline
 
-- **PR Preview**: Automatically deployed when a PR is opened
+- **PR PR**: Automatically deployed when a PR is opened
 - **Staging**: Automatically deployed when code is merged to main
 - **Production**: Automatically deployed when a release is created
 
@@ -116,7 +116,7 @@ For more detailed documentation, see the [docs](./docs) directory:
    - `perf:` - Performance improvements (patch version bump)
    - `refactor:` - Code refactoring (no version bump)
 3. Open a PR against the main branch
-4. Review the automatically deployed preview environment
+4. Review the automatically deployed pr environment
 5. Address any feedback from reviewers
 
 ## License

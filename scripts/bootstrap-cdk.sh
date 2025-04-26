@@ -44,8 +44,8 @@ cdk bootstrap aws://${AWS_ACCOUNT_ID}/${AWS_REGION} \
 echo -e "${GREEN}CDK bootstrap completed successfully.${NC}"
 
 # Update IAM roles with CDK bootstrap permissions if they exist
-if aws iam get-role --role-name GitHubActionsPreviewStaging &> /dev/null; then
-  echo -e "${BLUE}Adding CDK bootstrap permissions to GitHubActionsPreviewStaging role...${NC}"
+if aws iam get-role --role-name GitHubActionsPRStaging &> /dev/null; then
+  echo -e "${BLUE}Adding CDK bootstrap permissions to GitHubActionsPRStaging role...${NC}"
   
   # Create inline policy for CDK bootstrap permissions
   cat > .aws-github-oidc/cdk-bootstrap-policy.json << EOF
@@ -73,7 +73,7 @@ EOF
   
   # Attach the policy to both roles
   aws iam put-role-policy \
-    --role-name GitHubActionsPreviewStaging \
+    --role-name GitHubActionsPRStaging \
     --policy-name CDKBootstrapAccess \
     --policy-document file://.aws-github-oidc/cdk-bootstrap-policy.json
   

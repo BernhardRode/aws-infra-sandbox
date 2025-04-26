@@ -147,8 +147,8 @@ func main() {
 	awscdk.Tags_Of(app).Add(jsii.String("Environment"), jsii.String(environment.Name), nil)
 	awscdk.Tags_Of(app).Add(jsii.String("Username"), jsii.String(environment.Username), nil)
 
-	if environment.IsPreview {
-		awscdk.Tags_Of(app).Add(jsii.String("Preview"), jsii.String("true"), nil)
+	if environment.IsPR {
+		awscdk.Tags_Of(app).Add(jsii.String("PR"), jsii.String("true"), nil)
 		awscdk.Tags_Of(app).Add(jsii.String("PR"), jsii.String(environment.PRNumber), nil)
 	}
 	if environment.Version != "" {
@@ -171,9 +171,9 @@ func main() {
 	stack := LambdaStack(app, lambdaStackName, props)
 
 	// Add stack outputs for PR environments
-	if environment.IsPreview {
+	if environment.IsPR {
 		awscdk.NewCfnOutput(stack, jsii.String("EnvironmentType"), &awscdk.CfnOutputProps{
-			Value: jsii.String("Preview"),
+			Value: jsii.String("PR"),
 		})
 		awscdk.NewCfnOutput(stack, jsii.String("PRNumber"), &awscdk.CfnOutputProps{
 			Value: jsii.String(environment.PRNumber),

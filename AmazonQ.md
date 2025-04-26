@@ -4,11 +4,11 @@ This project is set up with GitHub Actions workflows to automate the deployment 
 
 ## CI/CD Workflow
 
-### PR Preview Environments
-- When a PR is opened against the `main` branch, a preview environment is automatically deployed
+### PR PR Environments
+- When a PR is opened against the `main` branch, a pr environment is automatically deployed
 - Each PR gets its own isolated environment with unique resource names
 - A comment is added to the PR with links to the deployed resources
-- Preview environments are automatically destroyed when the PR is closed
+- PR environments are automatically destroyed when the PR is closed
 
 ### Staging Environment
 - When code is merged to `main`, it's automatically deployed to the staging environment
@@ -24,13 +24,13 @@ This project is set up with GitHub Actions workflows to automate the deployment 
 The project uses a custom environment management system to handle different deployment targets:
 
 - **Development**: Local development environment
-- **Preview**: Temporary environments for pull requests
+- **PR**: Temporary environments for pull requests
 - **Staging**: Pre-release environment for testing
 - **Production**: Live environment for end users
 
 ## GitHub Actions Workflows
 
-1. **PR Preview** (`pr-preview.yml`): Deploys preview environments for PRs
+1. **PR PR** (`pr-pr.yml`): Deploys pr environments for PRs
 2. **Staging** (`staging.yml`): Deploys to staging when code is merged to main
 3. **Release** (`release.yml`): Manages releases and deploys to production
 4. **Test** (`test.yml`): Runs tests and CDK synthesis for validation
@@ -39,7 +39,7 @@ The project uses a custom environment management system to handle different depl
 
 To use these workflows, you need to set up the following GitHub secrets:
 
-- `AWS_ROLE_TO_ASSUME`: IAM role ARN for staging/preview environments
+- `AWS_ROLE_TO_ASSUME`: IAM role ARN for staging/pr environments
 - `AWS_ROLE_TO_ASSUME_PROD`: IAM role ARN for production environment
 - `AWS_REGION`: AWS region for deployments
 

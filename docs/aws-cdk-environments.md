@@ -7,7 +7,7 @@ This document explains how our project manages different deployment environments
 Our infrastructure supports four types of environments:
 
 1. **Development**: Personal development environments for individual developers
-2. **Preview**: Temporary environments created for pull requests
+2. **PR**: Temporary environments created for pull requests
 3. **Staging**: Pre-production environment for testing
 4. **Production**: Live environment for end users
 
@@ -17,9 +17,9 @@ Environments are configured using CDK context values. These can be provided via 
 
 ### Context Parameters
 
-- `environment`: The environment type (`dev`, `preview`, `staging`, `production`)
+- `environment`: The environment type (`dev`, `pr`, `staging`, `production`)
 - `username`: The developer's username (for development environments)
-- `prNumber`: The pull request number (for preview environments)
+- `prNumber`: The pull request number (for pr environments)
 - `version`: The release version (for production environments)
 
 ## Environment-Specific Resource Naming
@@ -27,7 +27,7 @@ Environments are configured using CDK context values. These can be provided via 
 Resources are named differently based on the environment to avoid conflicts:
 
 - **Development**: `{resourceName}-{username}-dev` (e.g., `api-ebbo-dev`)
-- **Preview**: `{resourceName}-pr{prNumber}` (e.g., `api-pr123`)
+- **PR**: `{resourceName}-pr{prNumber}` (e.g., `api-pr123`)
 - **Staging**: `{resourceName}-staging` (e.g., `api-staging`)
 - **Production**: `{resourceName}` (e.g., `api`)
 
@@ -36,7 +36,7 @@ Resources are named differently based on the environment to avoid conflicts:
 Stack names follow a similar pattern:
 
 - **Development**: `{username}-dev` (e.g., `ebbo-dev`)
-- **Preview**: `{stackName}-pr-{prNumber}` (e.g., `AwsInfraSandboxStack-pr-123`)
+- **PR**: `{stackName}-pr-{prNumber}` (e.g., `AwsInfraSandboxStack-pr-123`)
 - **Staging**: `{stackName}-staging` (e.g., `AwsInfraSandboxStack-staging`)
 - **Production**: `{stackName}` (e.g., `AwsInfraSandboxStack`)
 
@@ -47,8 +47,8 @@ All resources are automatically tagged with:
 - `Environment`: The environment type
 - `ManagedBy`: Set to "CDK"
 - `Owner`: The developer's username (for development environments)
-- `Preview`: Set to "true" (for preview environments)
-- `PR`: The PR number (for preview environments)
+- `PR`: Set to "true" (for pr environments)
+- `PR`: The PR number (for pr environments)
 - `Version`: The release version (for production environments)
 
 ## Usage Examples
@@ -61,10 +61,10 @@ make dev-deploy
 
 This creates a stack named `ebbo-dev` with resources prefixed with your username.
 
-### Deploying to Preview Environment
+### Deploying to PR Environment
 
 ```bash
-cdk deploy --context environment=preview --context prNumber=123
+cdk deploy --context environment=pr --context prNumber=123
 ```
 
 This creates a stack named `AwsInfraSandboxStack-pr-123` with resources prefixed with `pr123`.
