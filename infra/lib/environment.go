@@ -40,15 +40,6 @@ func kebabCase(s string) string {
 }
 
 func (e *Environment) GetStackName(suffix string) string {
-	// recursive print e
-	println("Environment:", e)
-	println("Environment Name:", e.Name)
-	println("Environment PRNumber:", e.PRNumber)
-	println("Environment Version:", e.Version)
-	println("Environment Username:", e.Username)
-	println("Environment IsPR:", e.IsPR)
-	println("Environment Suffix:", suffix)
-
 	if e.Name == "pr" {
 		return e.Name + "-" + e.PRNumber + "-" + kebabCase(suffix)
 	}

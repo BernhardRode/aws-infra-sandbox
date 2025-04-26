@@ -66,8 +66,8 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 	for _, folder := range folders {
 		// Create a LamdaFn Name from the folder name which will be like foo-bar, just parse the string
 		folderName := toPascalCase(folder)
-		lambdaName := props.Environment.Name + "-" + props.Environment.Username + "-" + folderName
-		apiName := props.Environment.Name + "-" + props.Environment.Username + "-" + folder
+		lambdaName := props.Environment.GetStackName("Fn")
+		apiName := props.Environment.GetStackName(folder)
 		fmt.Println("lambdaName:", lambdaName)
 		fmt.Println("apiName:", apiName)
 
