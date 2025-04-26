@@ -37,6 +37,7 @@ jobs:
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: staging
+      role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
       version: ${{ needs.release-please.outputs.tag_name }}
 
   test-staging:
@@ -82,5 +83,6 @@ jobs:
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: production
+      role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
       version: ${{ needs.release-please.outputs.tag_name }}
     secrets: inherit
