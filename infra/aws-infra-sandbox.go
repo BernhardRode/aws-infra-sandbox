@@ -68,8 +68,6 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 		folderName := toPascalCase(folder)
 		lambdaName := props.Environment.GetStackName("Fn")
 		apiName := props.Environment.GetStackName(folder)
-		fmt.Println("lambdaName:", lambdaName)
-		fmt.Println("apiName:", apiName)
 
 		// Create the Lambda function
 		lambdaFn := awslambda.NewFunction(stack, jsii.String(folderName+"LambdaFn"), &awslambda.FunctionProps{
