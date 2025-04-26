@@ -80,6 +80,12 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 	version := app.Node().TryGetContext(jsii.String("version"))
 	username := app.Node().TryGetContext(jsii.String("username"))
 
+	println("Environment Name:", envName)
+	println("Environment PRNumber:", prNumber)
+	println("Environment Version:", version)
+	println("Environment Username:", username)
+	println("Environment IsPreview:", prNumber)
+
 	env := Environment{
 		Name:      "development",
 		IsPreview: false,
