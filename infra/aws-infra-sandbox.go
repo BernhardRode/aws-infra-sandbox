@@ -64,8 +64,10 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 	}
 
 	for _, folder := range folders {
+		apiName := props.Environment.GetStackName(folder)
+
 		// Create the Lambda function
-		lambdaFn := awslambda.NewFunction(stack, jsii.String(folder), &awslambda.FunctionProps{
+		lambdaFn := awslambda.NewFunction(stack, jsii.String(apiName), &awslambda.FunctionProps{
 			Code:         awslambda.Code_FromAsset(jsii.String("build/dist/"+folder+".zip"), &awss3assets.AssetOptions{}),
 			Timeout:      awscdk.Duration_Seconds(jsii.Number(300)),
 			Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
@@ -86,26 +88,6 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 	}
 
 	return stack
-}
-
-func toPascalCase(input string) string {
-	// Split the string by hyphen
-	parts := strings.Split(input, "-")
-
-	// Capitalize first letter of each part
-	for i := 0; i < len(parts); i++ {
-		if len(parts[i]) > 0 {
-			// Convert part to lowercase first to handle any mixed case
-			parts[i] = strings.ToLower(parts[i])
-			// Then capitalize first letter
-			r := []rune(parts[i])
-			r[0] = unicode.ToUpper(r[0])
-			parts[i] = string(r)
-		}
-	}
-
-	// Join all parts together
-	return strings.Join(parts, "")
 }
 
 func readFolders(path string) ([]string, error) {
