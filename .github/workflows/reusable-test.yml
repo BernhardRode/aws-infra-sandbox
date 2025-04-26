@@ -4,12 +4,14 @@ on:
   workflow_call:
     inputs:
       go-version:
-        description: "The Go version to use"
-        required: true
+        required: false
+        type: string
+        default: '1.21'
     outputs:
       tests-passed:
         description: "Whether all tests passed"
         value: ${{ jobs.test.outputs.tests-passed }}
+        type: boolean
 
 jobs:
   test:
@@ -19,6 +21,15 @@ jobs:
       tests-passed: ${{ steps.run_tests.outputs.tests-passed }}
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ inputs.go-version }}
+          cache: true
+          
       - name: Install dependencies
         run: |
           cd infra && go mod tidy
@@ -53,5 +64,5 @@ jobs:
           echo "✅ All unit tests passed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Details:**" >> $GITHUB_STEP_SUMMARY
-            echo "- **Go Version:** $(go version | awk '{print $3}')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Go Version:** ${{ inputs.go-version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Test Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

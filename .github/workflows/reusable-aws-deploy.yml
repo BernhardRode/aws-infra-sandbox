@@ -62,6 +62,9 @@ jobs:
           # Add environment context
           CONTEXT_ARGS="$CONTEXT_ARGS --context environment=${{ inputs.environment }}"
           
+          # Add git sha context
+          CONTEXT_ARGS="$CONTEXT_ARGS --context sha=${{ github.sha }}"
+          
           # Add version context if provided
           if [ -n "${{ inputs.version }}" ]; then
             CONTEXT_ARGS="$CONTEXT_ARGS --context version=${{ inputs.version }}"
