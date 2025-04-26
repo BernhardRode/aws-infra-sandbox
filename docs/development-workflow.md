@@ -84,6 +84,36 @@ make dev-destroy
 
 This command destroys your development stack and all associated resources.
 
+## Working with Preview Environments
+
+For pull request preview environments, you can use:
+
+```bash
+# Deploy a preview environment for a specific PR
+make preview-deploy PR_NUMBER=123
+
+# Destroy a preview environment for a specific PR
+make preview-destroy PR_NUMBER=123
+```
+
+## Deploying to Different Environments
+
+You can deploy to different environments using:
+
+```bash
+# Development environment (personal)
+make dev-deploy
+
+# Preview environment (for PRs)
+make preview-deploy PR_NUMBER=123
+
+# Staging environment
+make deploy ENVIRONMENT=staging
+
+# Production environment
+make deploy ENVIRONMENT=production VERSION=v1.0.0
+```
+
 ## Working with Lambda Functions
 
 ### Creating a New Lambda Function
@@ -163,7 +193,7 @@ make test
    git push -u origin feature/my-new-feature
    ```
 
-4. A pr environment will be automatically deployed for your PR
+4. A preview environment will be automatically deployed for your PR
 
 5. After review and approval, merge your PR to main
 
@@ -197,6 +227,7 @@ If you encounter issues:
 2. Review the AWS CloudFormation console for stack events
 3. Check CloudWatch Logs for Lambda function logs
 4. Consult the AWS CDK documentation
+
 ## Setting Up GitHub Actions with AWS
 
 To set up GitHub Actions with AWS IAM Identity Federation:
@@ -206,6 +237,7 @@ make setup-github
 ```
 
 This command configures the necessary AWS resources and GitHub repository secrets for secure authentication between GitHub Actions and AWS. See [GitHub Actions with AWS IAM Identity Federation](./github-aws-federation.md) for more details.
+
 ## Bootstrapping CDK
 
 Before deploying with CDK for the first time, you need to bootstrap your AWS account:
@@ -215,6 +247,7 @@ make bootstrap-cdk
 ```
 
 This command sets up the necessary resources in your AWS account for CDK deployments and configures the appropriate permissions for GitHub Actions.
+
 ## One-Step Setup (Recommended)
 
 For the easiest setup experience, use the combined setup command:

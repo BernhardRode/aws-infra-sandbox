@@ -46,7 +46,7 @@ See [Development Workflow](./docs/development-workflow.md) for more details.
 
 ## CI/CD Pipeline
 
-- **PR PR**: Automatically deployed when a PR is opened
+- **PR Preview**: Automatically deployed when a PR is opened
 - **Staging**: Automatically deployed when code is merged to main
 - **Production**: Automatically deployed when a release is created
 
@@ -80,12 +80,14 @@ Available targets:
   lambdas        - Build all Lambda functions
   create         - Create a new stack (alias for deploy)
   update         - Update an existing stack (alias for deploy)
-  deploy         - Deploy the stack to AWS
-  destroy        - Destroy the stack from AWS
-  dev-create     - Create development stack for ebbo
-  dev-update     - Update development stack for ebbo
-  dev-deploy     - Deploy development stack for ebbo
-  dev-destroy    - Destroy development stack for ebbo
+  deploy         - Deploy the stack to AWS (use ENVIRONMENT=preview|staging|production)
+  destroy        - Destroy the stack from AWS (use ENVIRONMENT=preview|staging|production)
+  preview-deploy - Deploy preview environment (requires PR_NUMBER)
+  preview-destroy - Destroy preview environment (requires PR_NUMBER)
+  dev-create     - Create development stack for current user
+  dev-update     - Update development stack for current user
+  dev-deploy     - Deploy development stack for current user
+  dev-destroy    - Destroy development stack for current user
   dev-diff       - Show changes to be deployed to development stack
   watch          - Watch for changes and auto-deploy (smart detection)
   watch-dev      - Watch for changes with inotify (requires inotify-tools)
@@ -95,6 +97,33 @@ Available targets:
   cdk-diff       - Show changes to be deployed
   list-functions - List all available functions
 ```
+
+## Environment Management
+
+The project supports multiple deployment environments:
+
+- **Development**: Personal environments for individual developers
+- **Preview**: Temporary environments for pull requests
+- **Staging**: Pre-production environment for testing
+- **Production**: Live environment for end users
+
+You can deploy to different environments using:
+
+```bash
+# Development environment (personal)
+make dev-deploy
+
+# Preview environment (for PRs)
+make preview-deploy PR_NUMBER=123
+
+# Staging environment
+make deploy ENVIRONMENT=staging
+
+# Production environment
+make deploy ENVIRONMENT=production VERSION=v1.0.0
+```
+
+See [AWS CDK Environment Management](./docs/aws-cdk-environments.md) for more details.
 
 ## Documentation
 
@@ -116,7 +145,7 @@ For more detailed documentation, see the [docs](./docs) directory:
    - `perf:` - Performance improvements (patch version bump)
    - `refactor:` - Code refactoring (no version bump)
 3. Open a PR against the main branch
-4. Review the automatically deployed pr environment
+4. Review the automatically deployed preview environment
 5. Address any feedback from reviewers
 
 ## License
