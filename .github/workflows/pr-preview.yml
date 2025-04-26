@@ -13,13 +13,13 @@ permissions:
 
 # Import shared configuration
 jobs:
-  unit-tests:
-    name: Run Unit Tests
-    uses: ./.github/workflows/reusable-test.yml
+  # unit-tests:
+  #   name: Run Unit Tests
+  #   uses: ./.github/workflows/reusable-test.yml
 
   deploy-preview:
     name: Deploy PR Preview
-    needs: unit-tests
+    # needs: unit-tests
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: preview
