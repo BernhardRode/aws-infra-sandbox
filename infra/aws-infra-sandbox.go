@@ -37,19 +37,18 @@ func CoreStack(scope constructs.Construct, id string, props *StackProps) awscdk.
 	awscdk.NewCfnOutput(stack, jsii.String("Username"), &awscdk.CfnOutputProps{
 		Value: jsii.String(props.Environment.Username),
 	})
-	// Output the domain name servers
-	awscdk.NewCfnOutput(stack, jsii.String("ns-1"), &awscdk.CfnOutputProps{
-		Value: (*zone.HostedZoneNameServers())[0],
-	})
-	awscdk.NewCfnOutput(stack, jsii.String("ns-2"), &awscdk.CfnOutputProps{
-		Value: (*zone.HostedZoneNameServers())[1],
-	})
-	awscdk.NewCfnOutput(stack, jsii.String("ns-3"), &awscdk.CfnOutputProps{
-		Value: (*zone.HostedZoneNameServers())[2],
-	})
-	awscdk.NewCfnOutput(stack, jsii.String("ns-4"), &awscdk.CfnOutputProps{
-		Value: (*zone.HostedZoneNameServers())[3],
-	})
+
+	// Safely retrieve and output the domain name servers
+	nameServers := zone.HostedZoneNameServers()
+	if nameServers != nil {
+		for i, ns := range *nameServers {
+			awscdk.NewCfnOutput(stack, jsii.String(fmt.Sprintf("ns-%d", i+1)), &awscdk.CfnOutputProps{
+				Value: ns,
+			})
+		}
+	} else {
+		fmt.Println("Warning: No name servers available for the hosted zone")
+	}
 
 	return stack
 }
@@ -63,7 +62,7 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 
 	// iterate over all folders in functions and create lambdas
 	// read the folders from functions folder, from the filesystem and operating system
-	folders, err := readFolders("../functions")
+	folders, err := readFolders("./functions")
 	if err != nil {
 		fmt.Println("Error reading folders:", err)
 		return nil
@@ -79,7 +78,7 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 
 		// Create the Lambda function
 		lambdaFn := awslambda.NewFunction(stack, jsii.String(folderName+"LambdaFn"), &awslambda.FunctionProps{
-			Code:         awslambda.Code_FromAsset(jsii.String("../build/dist/"+folder+".zip"), &awss3assets.AssetOptions{}),
+			Code:         awslambda.Code_FromAsset(jsii.String("build/dist/"+folder+".zip"), &awss3assets.AssetOptions{}),
 			Timeout:      awscdk.Duration_Seconds(jsii.Number(300)),
 			Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
 			Architecture: awslambda.Architecture_ARM_64(),
