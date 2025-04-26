@@ -66,7 +66,8 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 	for _, folder := range folders {
 		// Create a LamdaFn Name from the folder name which will be like foo-bar, just parse the string
 		folderName := toPascalCase(folder)
-		lambdaName := props.Environment.GetStackName("Fn")
+
+		lambdaName := awscdk.unique_resource_name(props.Environment.GetStackName("Fn"))
 		apiName := props.Environment.GetStackName(folder)
 
 		// Create the Lambda function
@@ -76,7 +77,6 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 			Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
 			Architecture: awslambda.Architecture_ARM_64(),
 			Handler:      jsii.String("bootstrap"), // Must be "bootstrap" for provided.al2023
-			FunctionName: jsii.String(lambdaName),
 		})
 
 		// Create API Gateway with Lambda integration
