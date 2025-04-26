@@ -27,7 +27,7 @@ SHA ?= $(shell git rev-parse --short HEAD)
 FUNCTION_NAMES = $(notdir $(wildcard $(FUNCTIONS_DIR)/*))
 
 # Define targets for different environments
-.PHONY: all clean build deploy destroy dev-deploy dev-destroy dev-diff watch-dev watch-dev-poll create update dev-create dev-update watch lambdas cdk-synth cdk-diff $(FUNCTION_NAMES) setup-github bootstrap-cdk setup pr-deploy pr-destroy
+.PHONY: all clean build deploy destroy dev-deploy dev-destroy dev-diff watch-dev watch-dev-poll create update dev-create dev-update watch lambdas cdk-synth cdk-diff $(FUNCTION_NAMES) setup-github bootstrap-cdk setup pr-deploy pr-destroy preview-deploy preview-destroy
 
 # Default target
 all: clean build deploy
@@ -130,6 +130,10 @@ dev-deploy: build $(CDK_OUT_DIR)
 		$(if $(SHA),--context sha=$(SHA),)
 
 # PR environment commands
+preview-deploy: pr-deploy
+
+preview-destroy: pr-destroy
+
 pr-deploy:
 	@$(MAKE) deploy ENVIRONMENT=pr $(if $(PR_NUMBER),,$(error PR_NUMBER is required for pr environment))
 
