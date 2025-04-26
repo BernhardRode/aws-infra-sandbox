@@ -17,9 +17,7 @@ CDK_APP = $(shell pwd)/$(CDK_DIR)/aws-infra-sandbox.go
 CDK_BIN = "$(CURDIR)/$(BIN_DIR)/aws-infra-sandbox"
 CDK_OUTDIR_OPTION = --output $(CDK_OUT_DIR)
 
-# Environment settings
-USERNAME = ebbo
-DEV_STACK_NAME = $(USERNAME)-dev
+USERNAME = $(shell whoami)
 
 # Get function names
 FUNCTION_NAMES = $(notdir $(wildcard $(FUNCTIONS_DIR)/*))
@@ -100,7 +98,9 @@ deploy: build $(CDK_OUT_DIR)
 	@echo "Deploying stack..."
 	@echo "Running CDK deploy with app: $(CDK_BIN)"
 	$(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
-		--require-approval never
+		--require-approval never \
+		--context environment=$(ENVIRONMENT) \
+		--context username=$(USERNAME)
 
 # Destroy the stack
 destroy: build $(CDK_OUT_DIR)
