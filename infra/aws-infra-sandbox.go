@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsroute53"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3assets"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -27,10 +28,27 @@ func CoreStack(scope constructs.Construct, id string, props *StackProps) awscdk.
 		sprops = props.StackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
-	
+
+	zone := awsroute53.NewPublicHostedZone(stack, jsii.String("EbboDevZone"), &awsroute53.PublicHostedZoneProps{
+		ZoneName: jsii.String("ebbo.dev"),
+	})
+
 	// Add environment tags to all resources
 	awscdk.NewCfnOutput(stack, jsii.String("Username"), &awscdk.CfnOutputProps{
 		Value: jsii.String(props.Environment.Username),
+	})
+	// Output the domain name servers
+	awscdk.NewCfnOutput(stack, jsii.String("ns-1"), &awscdk.CfnOutputProps{
+		Value: (*zone.HostedZoneNameServers())[0],
+	})
+	awscdk.NewCfnOutput(stack, jsii.String("ns-2"), &awscdk.CfnOutputProps{
+		Value: (*zone.HostedZoneNameServers())[1],
+	})
+	awscdk.NewCfnOutput(stack, jsii.String("ns-3"), &awscdk.CfnOutputProps{
+		Value: (*zone.HostedZoneNameServers())[2],
+	})
+	awscdk.NewCfnOutput(stack, jsii.String("ns-4"), &awscdk.CfnOutputProps{
+		Value: (*zone.HostedZoneNameServers())[3],
 	})
 
 	return stack
@@ -134,7 +152,7 @@ func main() {
 	// Add environment tags to all resources
 	awscdk.Tags_Of(app).Add(jsii.String("Environment"), jsii.String(environment.Name), nil)
 	awscdk.Tags_Of(app).Add(jsii.String("Username"), jsii.String(environment.Username), nil)
-	
+
 	if environment.IsPreview {
 		awscdk.Tags_Of(app).Add(jsii.String("Preview"), jsii.String("true"), nil)
 		awscdk.Tags_Of(app).Add(jsii.String("PR"), jsii.String(environment.PRNumber), nil)
