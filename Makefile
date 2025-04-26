@@ -98,9 +98,7 @@ deploy: build $(CDK_OUT_DIR)
 	@echo "Deploying stack..."
 	@echo "Running CDK deploy with app: $(CDK_BIN)"
 	$(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
-		--require-approval never \
-		--context environment=$(ENVIRONMENT) \
-		--context username=$(USERNAME)
+		--require-approval never
 
 # Destroy the stack
 destroy: build $(CDK_OUT_DIR)
