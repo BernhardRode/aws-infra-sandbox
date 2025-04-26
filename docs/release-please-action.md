@@ -22,7 +22,7 @@ Automate releases with Conventional Commit Messages.
 
    jobs:
      release-please:
-       runs-on: ubuntu-latest
+       runs-on: ubuntu-24.04-arm
        steps:
          - uses: googleapis/release-please-action@v4
            with:
@@ -261,7 +261,7 @@ on:
 name: release-please
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: googleapis/release-please-action@v4
         with:
@@ -284,7 +284,7 @@ on:
 name: release-please
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -331,7 +331,7 @@ on:
 name: release-please
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -368,7 +368,7 @@ on:
 name: release-please
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: googleapis/release-please-action@v4
         id: release

@@ -10,7 +10,7 @@ on:
 jobs:
   test:
     name: Run Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       tests-passed: ${{ steps.run_tests.outputs.tests-passed }}
     
