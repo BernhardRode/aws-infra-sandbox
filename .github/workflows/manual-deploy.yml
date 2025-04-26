@@ -25,72 +25,19 @@ permissions:
   id-token: write
   contents: read
 
+# Import shared configuration
+env:
+  GO_VERSION: '1.21'
+
 jobs:
   deploy:
     name: Deploy to ${{ github.event.inputs.environment }}
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.ref }}
-      
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-          cache: true
-      
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ github.event.inputs.environment == 'production' && secrets.AWS_ROLE_TO_ASSUME_PROD || secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      
-      - name: Install CDK
-        run: npm install -g aws-cdk
-      
-      - name: Install inotify-tools
-        run: sudo apt-get update && sudo apt-get install -y inotify-tools
-      
-      - name: Set version
-        id: set_version
-        run: |
-          # Use provided version if available, otherwise use git ref
-          VERSION="${{ github.event.inputs.version }}"
-          if [ -z "$VERSION" ]; then
-            if [[ "${{ github.event.inputs.ref }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-              # If ref is a version tag, use it
-              VERSION="${{ github.event.inputs.ref }}"
-            else
-              # Otherwise use short commit SHA
-              VERSION=$(git rev-parse --short HEAD)
-            fi
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Using version: $VERSION"
-      
-      - name: Deploy
-        run: |
-          echo "Deploying ${{ github.event.inputs.ref }} to ${{ github.event.inputs.environment }} with version ${{ env.VERSION }}"
-          
-          # Build and deploy
-          make build
-          
-          # Deploy with appropriate context
-          make deploy -- --all \
-            --context environment=${{ github.event.inputs.environment }} \
-            --context version=${{ env.VERSION }}
-      
-      - name: Deployment Summary
-        run: |
-          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Successfully deployed to **${{ github.event.inputs.environment }}**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Git Reference:** ${{ github.event.inputs.ref }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version:** ${{ env.VERSION }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Deployed by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Deployment Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+    uses: ./.github/workflows/reusable-aws-deploy.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      version: ${{ github.event.inputs.version || github.event.inputs.ref }}
+      go-version: ${{ env.GO_VERSION }}
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}

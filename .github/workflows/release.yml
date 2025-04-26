@@ -10,6 +10,10 @@ permissions:
   pull-requests: write
   id-token: write
 
+# Import shared configuration
+env:
+  GO_VERSION: '1.21'
+
 jobs:
   release-please:
     name: Release Please
@@ -19,14 +23,6 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
     
     steps:
-      # Create a GitHub App token instead of using GITHUB_TOKEN
-      - name: Generate token
-        id: generate_token
-        uses: tibdex/github-app-token@v2
-        with:
-          app_id: ${{ secrets.GH_APP_ID }}
-          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-      
       - name: Run Release Please
         id: release
         uses: googleapis/release-please-action@v4
@@ -52,6 +48,7 @@ jobs:
     with:
       environment: staging
       version: ${{ needs.release-please.outputs.tag_name }}
+      go-version: ${{ env.GO_VERSION }}
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
@@ -59,7 +56,7 @@ jobs:
 
   test-staging:
     name: Test Staging Deployment
-    needs: deploy-staging
+    needs: [release-please, deploy-staging]
     runs-on: ubuntu-latest
     if: ${{ needs.release-please.outputs.release_created }}
     
@@ -70,7 +67,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
       
       - name: Configure AWS credentials
@@ -106,6 +103,7 @@ jobs:
     with:
       environment: production
       version: ${{ needs.release-please.outputs.tag_name }}
+      go-version: ${{ env.GO_VERSION }}
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}

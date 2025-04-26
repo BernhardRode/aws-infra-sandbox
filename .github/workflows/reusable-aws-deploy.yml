@@ -26,6 +26,10 @@ on:
         required: false
         type: string
         default: ''
+      go-version:
+        required: false
+        type: string
+        default: '1.21'
     secrets:
       AWS_ROLE_TO_ASSUME:
         required: false
@@ -39,8 +43,14 @@ on:
         value: ${{ jobs.deploy.outputs.deployment-outputs }}
 
 jobs:
+  setup:
+    uses: ./.github/workflows/reusable-setup.yml
+    with:
+      go-version: ${{ inputs.go-version }}
+      
   deploy:
     name: Deploy to ${{ inputs.environment }}
+    needs: setup
     runs-on: ubuntu-latest
     outputs:
       deployment-outputs: ${{ steps.deploy.outputs.outputs }}
@@ -52,7 +62,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: ${{ inputs.go-version }}
           cache: true
           
       - name: Configure AWS credentials

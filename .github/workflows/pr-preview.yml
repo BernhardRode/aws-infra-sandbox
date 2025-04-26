@@ -11,6 +11,10 @@ permissions:
   contents: read
   pull-requests: write
 
+# Import shared configuration
+env:
+  GO_VERSION: '1.21'
+
 jobs:
   deploy-preview:
     name: Deploy PR Preview
@@ -19,8 +23,10 @@ jobs:
       environment: preview
       pr-number: ${{ github.event.pull_request.number }}
       outputs-file: pr-outputs.json
+      go-version: ${{ env.GO_VERSION }}
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
 
   comment-pr:
@@ -62,7 +68,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Configure AWS credentials
@@ -79,4 +85,4 @@ jobs:
           PR_NUMBER=${{ github.event.pull_request.number }}
           echo "Destroying PR preview for PR #${PR_NUMBER}"
           
-          make destroy -- --context environment=preview --context prNumber=${PR_NUMBER}
+          make destroy -- --all --context environment=preview --context prNumber=${PR_NUMBER}

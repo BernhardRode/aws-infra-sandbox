@@ -1,9 +1,9 @@
-name: Deploy to Development
+name: Deploy to Staging
 
 on:
   push:
     branches:
-      - development
+      - main
 
 permissions:
   id-token: write
@@ -14,12 +14,11 @@ env:
   GO_VERSION: '1.21'
 
 jobs:
-  deploy-development:
-    name: Deploy to Development
+  deploy-staging:
+    name: Deploy to Staging
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
-      environment: development
-      version: ${{ github.sha }}
+      environment: staging
       go-version: ${{ env.GO_VERSION }}
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}

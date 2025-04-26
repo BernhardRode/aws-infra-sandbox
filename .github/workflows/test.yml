@@ -6,12 +6,16 @@ on:
   pull_request:
     branches: [ main ]
 
+# Import shared configuration
+env:
+  GO_VERSION: '1.21'
+
 jobs:
   setup:
     name: Setup Environment
     uses: ./.github/workflows/reusable-setup.yml
     with:
-      go-version: '1.21'
+      go-version: ${{ env.GO_VERSION }}
 
   test:
     name: Run Tests
@@ -25,7 +29,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Install dependencies
@@ -36,9 +40,6 @@ jobs:
               cd $dir && go mod tidy && cd ../../
             fi
           done
-
-      - name: Install CDK
-        run: npm install -g aws-cdk
 
       - name: Run tests
         run: make test
