@@ -30,7 +30,7 @@ func getCurrentUsername() string {
 	return username
 }
 
-// kebabCase converts a string to kebab-case
+// converts a string from camelCase to kebab-case
 func kebabCase(s string) string {
 	// Split the string by uppercase letters
 	words := regexp.MustCompile("[A-Z][^A-Z]*").FindAllString(s, -1)
