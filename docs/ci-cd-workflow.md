@@ -131,3 +131,30 @@ To use these workflows, you need to set up the following GitHub secrets:
 2. **Review PR previews**: Always check the preview environment before merging
 3. **Test in staging**: Verify changes in staging before creating a release
 4. **Monitor deployments**: Watch the GitHub Actions logs for any deployment issues
+## Manual Deployment
+
+In addition to the automated CI/CD workflows, this project also includes a manual deployment workflow for controlled deployments of specific versions:
+
+### Manual Deployment Workflow
+
+**File**: `.github/workflows/manual-deploy.yml`
+
+This workflow is triggered manually through the GitHub Actions UI and allows you to:
+
+1. Deploy any Git reference (tag, branch, or commit) to either staging or production
+2. Specify a custom version label for the deployment
+3. Get a detailed deployment summary
+
+**Key Features**:
+- Choose between staging and production environments
+- Deploy any Git reference (tag, branch, or commit)
+- Optionally specify a custom version label
+- Get a detailed deployment summary
+
+**Usage**:
+- Go to the "Actions" tab in your repository
+- Select the "Manual Deployment" workflow
+- Click "Run workflow"
+- Fill in the parameters and click "Run workflow" again
+
+For more details, see the [Manual Deployment](./manual-deployment.md) documentation.

@@ -28,6 +28,11 @@ Welcome to the documentation for the AWS Infrastructure Sandbox project. This do
    - Security considerations
    - Troubleshooting
 
+5. [Manual Deployment](./manual-deployment.md)
+   - Deploying specific versions
+   - Targeting different environments
+   - Best practices for manual deployments
+
 ## Getting Started
 
 To get started with development:

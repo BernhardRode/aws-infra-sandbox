@@ -17,5 +17,4 @@ jobs:
       environment: staging
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-      AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
