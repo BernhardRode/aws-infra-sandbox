@@ -17,12 +17,17 @@ CDK_APP = $(shell pwd)/$(CDK_DIR)/aws-infra-sandbox.go
 CDK_BIN = "$(CURDIR)/$(BIN_DIR)/aws-infra-sandbox"
 CDK_OUTDIR_OPTION = --output $(CDK_OUT_DIR)
 
+# Default values for environment variables
 USERNAME = $(shell whoami)
+ENVIRONMENT ?= development
+PR_NUMBER ?=
+SHA ?= $(shell git rev-parse --short HEAD)
 
 # Get function names
 FUNCTION_NAMES = $(notdir $(wildcard $(FUNCTIONS_DIR)/*))
 
-.PHONY: all clean build deploy destroy dev-deploy dev-destroy dev-diff watch-dev watch-dev-poll create update dev-create dev-update watch lambdas cdk-synth cdk-diff $(FUNCTION_NAMES) setup-github bootstrap-cdk setup
+# Define targets for different environments
+.PHONY: all clean build deploy destroy dev-deploy dev-destroy dev-diff watch-dev watch-dev-poll create update dev-create dev-update watch lambdas cdk-synth cdk-diff $(FUNCTION_NAMES) setup-github bootstrap-cdk setup preview-deploy preview-destroy
 
 # Default target
 all: clean build deploy
@@ -95,15 +100,24 @@ cdk-diff: build $(CDK_OUT_DIR)
 
 # Deploy the stack
 deploy: build $(CDK_OUT_DIR)
-	@echo "Deploying stack..."
+	@echo "Deploying stack for environment: $(ENVIRONMENT)..."
 	@echo "Running CDK deploy with app: $(CDK_BIN)"
 	$(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
-		--require-approval never
+		--require-approval never \
+		--context environment=$(ENVIRONMENT) \
+		$(if $(PR_NUMBER),--context pr_number=$(PR_NUMBER),) \
+		$(if $(USERNAME),--context username=$(USERNAME),) \
+		$(if $(SHA),--context sha=$(SHA),)
 
 # Destroy the stack
 destroy: build $(CDK_OUT_DIR)
-	@echo "Destroying stack..."
-	$(CDK) destroy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all --force
+	@echo "Destroying stack for environment: $(ENVIRONMENT)..."
+	$(CDK) destroy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
+		--force \
+		--context environment=$(ENVIRONMENT) \
+		$(if $(PR_NUMBER),--context pr_number=$(PR_NUMBER),) \
+		$(if $(USERNAME),--context username=$(USERNAME),) \
+		$(if $(SHA),--context sha=$(SHA),)
 
 # Development environment commands
 dev-deploy: build $(CDK_OUT_DIR)
@@ -111,7 +125,15 @@ dev-deploy: build $(CDK_OUT_DIR)
 	$(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
 		--require-approval never \
 		--context environment=development \
-		--context username=$(USERNAME)
+		--context username=$(USERNAME) \
+		$(if $(SHA),--context sha=$(SHA),)
+
+# Preview environment commands
+preview-deploy:
+	@$(MAKE) deploy ENVIRONMENT=preview $(if $(PR_NUMBER),,$(error PR_NUMBER is required for preview environment))
+
+preview-destroy:
+	@$(MAKE) destroy ENVIRONMENT=preview $(if $(PR_NUMBER),,$(error PR_NUMBER is required for preview environment))
 
 dev-create: dev-deploy
 
@@ -218,8 +240,10 @@ help:
 	@echo "  lambdas        - Build all Lambda functions"
 	@echo "  create         - Create a new stack (alias for deploy)"
 	@echo "  update         - Update an existing stack (alias for deploy)"
-	@echo "  deploy         - Deploy the stack to AWS"
-	@echo "  destroy        - Destroy the stack from AWS"
+	@echo "  deploy         - Deploy the stack to AWS (use ENVIRONMENT=preview|staging|production)"
+	@echo "  destroy        - Destroy the stack from AWS (use ENVIRONMENT=preview|staging|production)"
+	@echo "  preview-deploy - Deploy preview environment (requires PR_NUMBER)"
+	@echo "  preview-destroy - Destroy preview environment (requires PR_NUMBER)"
 	@echo "  dev-create     - Create development stack for $(USERNAME)"
 	@echo "  dev-update     - Update development stack for $(USERNAME)"
 	@echo "  dev-deploy     - Deploy development stack for $(USERNAME)"
