@@ -76,4 +76,4 @@ jobs:
           PR_NUMBER=${{ github.event.pull_request.number }}
           echo "Destroying PR preview for PR #${PR_NUMBER}"
           
-          make destroy -- --all --context environment=preview --context prNumber=${PR_NUMBER}
+          make preview-destroy PR_NUMBER=${PR_NUMBER}
