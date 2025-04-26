@@ -93,10 +93,7 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 
 	// Validate environment context
 	if envName == nil || (envName != nil && envName.(string) == "") {
-		panic("Missing required CDK context: environment. Please pass --context environment=<env> to cdk deploy.")
-	}
-	if envName.(string) == "preview" && (prNumber == nil || prNumber.(string) == "") {
-		panic("Missing required CDK context: prNumber for preview environment. Please pass --context prNumber=<prNumber> to cdk deploy.")
+		env.Name = "development"
 	}
 
 	if nameStr, ok := envName.(string); ok {
