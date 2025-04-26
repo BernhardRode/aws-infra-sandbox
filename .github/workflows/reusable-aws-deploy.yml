@@ -78,23 +78,28 @@ jobs:
             DEPLOY_CMD="$DEPLOY_CMD PR_NUMBER=${{ inputs.pr-number }}"
           fi
           
-          # Create outputs file if needed
-          if [ -n "${{ inputs.outputs-file }}" ]; then
-            touch ${{ inputs.outputs-file }}
-            OUTPUTS_ARG="--outputs-file ${{ inputs.outputs-file }}"
-          else
-            OUTPUTS_ARG=""
-          fi
-          
           echo "Deploying to ${{ inputs.environment }} with command: $DEPLOY_CMD"
           
-          # Execute the deployment with any additional arguments
-          $DEPLOY_CMD $OUTPUTS_ARG
+          # Execute the deployment
+          $DEPLOY_CMD
           
-          # Extract and format outputs for PR comment if outputs file exists
-          if [ -n "${{ inputs.outputs-file }}" ] && [ -f "${{ inputs.outputs-file }}" ]; then
-            OUTPUTS=$(cat ${{ inputs.outputs-file }} | jq -r 'to_entries[] | "\(.key): \(.value.value)"')
-            echo "outputs<<EOF" >> $GITHUB_OUTPUT
-            echo "$OUTPUTS" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+          # If outputs file is specified, run a separate CDK command to generate outputs
+          if [ -n "${{ inputs.outputs-file }}" ]; then
+            echo "Generating outputs file: ${{ inputs.outputs-file }}"
+            cdk deploy --app "$(pwd)/build/bin/aws-infra-sandbox" --output build/cdk.out --all \
+              --require-approval never \
+              --context environment=${{ inputs.environment }} \
+              $(if [ -n "${{ inputs.pr-number }}" ]; then echo "--context pr_number=${{ inputs.pr-number }}"; fi) \
+              $(if [ -n "${{ inputs.version }}" ]; then echo "--context version=${{ inputs.version }}"; fi) \
+              $(if [ -n "${{ github.sha }}" ]; then echo "--context sha=${{ github.sha }}"; fi) \
+              --outputs-file ${{ inputs.outputs-file }} \
+              --no-execute
+            
+            # Extract and format outputs for PR comment if outputs file exists
+            if [ -f "${{ inputs.outputs-file }}" ]; then
+              OUTPUTS=$(cat ${{ inputs.outputs-file }} | jq -r 'to_entries[] | "\(.key): \(.value.value)"')
+              echo "outputs<<EOF" >> $GITHUB_OUTPUT
+              echo "$OUTPUTS" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
           fi
