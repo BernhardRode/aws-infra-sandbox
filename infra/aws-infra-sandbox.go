@@ -64,12 +64,8 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 	}
 
 	for _, folder := range folders {
-		// Create a LamdaFn Name from the folder name which will be like foo-bar, just parse the string
-		lambdaName := props.Environment.GetStackName("Fn")
-		apiName := props.Environment.GetStackName(folder)
-
 		// Create the Lambda function
-		lambdaFn := awslambda.NewFunction(stack, jsii.String(lambdaName), &awslambda.FunctionProps{
+		lambdaFn := awslambda.NewFunction(stack, jsii.String(folder), &awslambda.FunctionProps{
 			Code:         awslambda.Code_FromAsset(jsii.String("build/dist/"+folder+".zip"), &awss3assets.AssetOptions{}),
 			Timeout:      awscdk.Duration_Seconds(jsii.Number(300)),
 			Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
@@ -80,7 +76,7 @@ func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscd
 		// Create API Gateway with Lambda integration
 		api := awsapigateway.NewLambdaRestApi(stack, jsii.String(folder+"Endpoint"), &awsapigateway.LambdaRestApiProps{
 			Handler:     lambdaFn,
-			RestApiName: jsii.String(apiName),
+			RestApiName: jsii.String(folder),
 		})
 
 		// Add API URL as stack output
