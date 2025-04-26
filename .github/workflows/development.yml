@@ -8,17 +8,12 @@ on:
 permissions:
   id-token: write
   contents: read
-
-# Import shared configuration
-env:
-  GO_VERSION: '1.21'
-
 jobs:
   unit-tests:
     name: Run Unit Tests
     uses: ./.github/workflows/reusable-test.yml
     with:
-      go-version: ${{ env.GO_VERSION }}
+      go-version: ${{ github.event.inputs.go-version }}
 
   deploy-development:
     name: Deploy to Development
@@ -27,9 +22,8 @@ jobs:
     with:
       environment: development
       version: ${{ github.sha }}
-      go-version: ${{ env.GO_VERSION }}
+      go-version: ${{ github.event.inputs.go-version }}
       skip-tests: true  # Tests already ran in the unit-tests job
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-      AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
