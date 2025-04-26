@@ -14,6 +14,7 @@ CGO_ENABLED = 0
 # AWS CDK commands
 CDK = cdk
 CDK_APP = $(shell pwd)/$(CDK_DIR)/aws-infra-sandbox.go
+CDK_BIN = "$(CURDIR)/$(BIN_DIR)/aws-infra-sandbox"
 CDK_OUTDIR_OPTION = --output $(CDK_OUT_DIR)
 
 # Environment settings
@@ -45,7 +46,6 @@ $(CDK_OUT_DIR):
 clean:
 	@echo "Cleaning..."
 	rm -rf $(BUILD_DIR)
-	rm -f infra/aws-infra-sandbox
 	@echo "Clean complete"
 
 # Build all Lambda functions
@@ -87,30 +87,30 @@ create: deploy
 update: deploy
 
 # CDK commands
-cdk-synth: $(CDK_OUT_DIR)
+cdk-synth: build $(CDK_OUT_DIR)
 	@echo "Synthesizing CDK stack..."
 	$(CDK) synth --app $(CDK_BIN) $(CDK_OUTDIR_OPTION)
 
-cdk-diff: $(CDK_OUT_DIR)
+cdk-diff: build $(CDK_OUT_DIR)
 	@echo "Showing CDK diff..."
 	$(CDK) diff --app $(CDK_BIN) $(CDK_OUTDIR_OPTION)
 
 # Deploy the stack
 deploy: build $(CDK_OUT_DIR)
 	@echo "Deploying stack..."
-	@echo "Running CDK deploy with app: $(CDK_APP)"
-	cd $(CDK_DIR) && $(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
+	@echo "Running CDK deploy with app: $(CDK_BIN)"
+	$(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
 		--require-approval never
 
 # Destroy the stack
-destroy: $(CDK_OUT_DIR)
+destroy: build $(CDK_OUT_DIR)
 	@echo "Destroying stack..."
 	$(CDK) destroy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all --force
 
 # Development environment commands
 dev-deploy: build $(CDK_OUT_DIR)
 	@echo "Deploying development stack for $(USERNAME)..."
-	cd $(CDK_DIR) && $(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
+	$(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
 		--require-approval never \
 		--context environment=development \
 		--context username=$(USERNAME)
@@ -119,16 +119,16 @@ dev-create: dev-deploy
 
 dev-update: dev-deploy
 
-dev-destroy: $(CDK_OUT_DIR)
+dev-destroy: build $(CDK_OUT_DIR)
 	@echo "Destroying development stack for $(USERNAME)..."
-	cd $(CDK_DIR) && $(CDK) destroy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
+	$(CDK) destroy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
 		--force \
 		--context environment=development \
 		--context username=$(USERNAME)
 
 dev-diff: build $(CDK_OUT_DIR)
 	@echo "Showing diff for development stack..."
-	cd $(CDK_DIR) && $(CDK) diff --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
+	$(CDK) diff --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
 		--context environment=development \
 		--context username=$(USERNAME)
 
@@ -137,9 +137,6 @@ watch-dev:
 	@echo "Watching for changes and deploying to development environment..."
 	@echo "Press Ctrl+C to stop watching"
 	@echo "Note: This requires inotifywait. Install with: sudo apt-get install inotify-tools"
-	@echo "Note: Not needed in CICD, as it will be handled by GitHub Actions"
-	@echo "Note: This is a development-only feature and should not be used in production"
-	@echo "Note: This will only work on Linux and MacOS"
 	@if command -v inotifywait > /dev/null; then \
 		touch .watch-timestamp; \
 		while true; do \
