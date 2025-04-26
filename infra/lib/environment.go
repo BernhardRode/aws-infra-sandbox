@@ -79,12 +79,14 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 	prNumber := app.Node().TryGetContext(jsii.String("prNumber"))
 	version := app.Node().TryGetContext(jsii.String("version"))
 	username := app.Node().TryGetContext(jsii.String("username"))
+	sha := app.Node().TryGetContext(jsii.String("sha"))
 
 	println("Environment Name:", envName)
 	println("Environment PRNumber:", prNumber)
 	println("Environment Version:", version)
 	println("Environment Username:", username)
 	println("Environment IsPreview:", prNumber)
+	println("Environment sha:", sha)
 
 	env := Environment{
 		Name:      "development",
@@ -107,6 +109,12 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 	if version != nil {
 		if versionStr, ok := version.(string); ok {
 			env.Version = versionStr
+		}
+	}
+
+	if sha != nil {
+		if shaStr, ok := sha.(string); ok {
+			env.Version = shaStr
 		}
 	}
 
