@@ -10,6 +10,7 @@ NC='\033[0m' # No Color
 
 # Domain to configure
 DOMAIN="ebbo.dev"
+TTL=300
 
 # Check if required tools are installed
 check_requirements() {
@@ -53,16 +54,20 @@ check_domain() {
 # Add A and AAAA records
 add_dns_records() {
   echo -e "${BLUE}Adding DNS records for ${DOMAIN}...${NC}"
-
-  TTL=300
-  # Define the hosted zone ID (replace with your actual hosted zone ID)
   
   # A Records - IPv4 addresses
   IPV4_ADDRESSES=(
-    "76.76.21.21"
-    "76.76.21.22"
-    "76.76.21.23"
-    "76.76.21.24"
+185.199.108.153
+185.199.109.153
+185.199.110.153
+185.199.111.153
+
+To create AAAA records, point your apex domain to the IP addresses for GitHub Pages.
+
+2606:50c0:8000::153
+2606:50c0:8001::153
+2606:50c0:8002::153
+2606:50c0:8003::153
   )
   
   # AAAA Records - IPv6 addresses
@@ -86,7 +91,7 @@ add_dns_records() {
         "ResourceRecordSet": {
           "Name": "'"${DOMAIN}"'",
           "Type": "A",
-          "TTL": 300,
+          "TTL": '"$TTL"',
           "ResourceRecords": [' >> $TEMP_FILE
   
   # Add all IPv4 addresses
@@ -117,7 +122,7 @@ add_dns_records() {
         "ResourceRecordSet": {
           "Name": "'"${DOMAIN}"'",
           "Type": "AAAA",
-          "TTL": 300,
+          "TTL": '"$TTL"',
           "ResourceRecords": [' >> $TEMP_FILE
     
     # Add all IPv6 addresses
