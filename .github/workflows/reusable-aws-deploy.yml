@@ -81,7 +81,9 @@ jobs:
           fi
           
           echo "Deploying to ${{ inputs.environment }} with context: $CONTEXT_ARGS"
-          echo "Outputs file: $OUTPUTS_ARG"
+          echo "CONTEXT_ARGS: $CONTEXT_ARGS"
+          echo "OUTPUTS_ARG: $OUTPUTS_ARG"
+          
           make build
           make deploy -- $CONTEXT_ARGS $OUTPUTS_ARG --all
           
