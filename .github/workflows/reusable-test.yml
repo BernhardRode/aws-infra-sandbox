@@ -20,15 +20,6 @@ jobs:
       tests-passed: ${{ steps.run_tests.outputs.tests-passed }}
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ inputs.go-version }}
-          cache: true
-          
       - name: Install dependencies
         run: |
           cd infra && go mod tidy

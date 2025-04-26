@@ -37,8 +37,6 @@ on:
     secrets:
       AWS_ROLE_TO_ASSUME:
         required: false
-      AWS_ROLE_TO_ASSUME_PROD:
-        required: false
       AWS_REGION:
         required: false
     outputs:
@@ -47,12 +45,6 @@ on:
         value: ${{ jobs.deploy.outputs.deployment-outputs }}
 
 jobs:
-  test:
-    name: Run Unit Tests
-    uses: ./.github/workflows/reusable-test.yml
-    with:
-      go-version: ${{ inputs.go-version }}
-    if: ${{ !inputs.skip-tests }}
       
   setup:
     name: Setup Environment
@@ -62,6 +54,13 @@ jobs:
       go-version: ${{ inputs.go-version }}
     if: ${{ always() && (inputs.skip-tests || needs.test.result == 'success') }}
       
+  test:
+    name: Run Unit Tests
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      go-version: ${{ inputs.go-version }}
+    if: ${{ !inputs.skip-tests }}
+    
   deploy:
     name: Deploy to ${{ inputs.environment }}
     needs: [test, setup]
