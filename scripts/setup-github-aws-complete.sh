@@ -202,14 +202,14 @@ create_iam_roles() {
       --role-name GitHubActionsPreviewStaging \
       --policy-document file://.aws-github-oidc/trust-policy-preview-staging.json
     
-    PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
+    DEVELOPMENT_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
   else
     echo -e "${BLUE}Creating new GitHubActionsPreviewStaging role...${NC}"
     aws iam create-role \
       --role-name GitHubActionsPreviewStaging \
       --assume-role-policy-document file://.aws-github-oidc/trust-policy-preview-staging.json
     
-    PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
+    DEVELOPMENT_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
   fi
   
   # Attach or update policies for preview/staging role (always do this to ensure latest permissions)
@@ -353,7 +353,7 @@ setup_github_secrets() {
   if [ "$HAS_GH" = true ]; then
     # Set secrets using GitHub CLI
     echo -e "${BLUE}Setting AWS_ROLE_TO_ASSUME secret...${NC}"
-    gh secret set AWS_ROLE_TO_ASSUME -b"$PREVIEW_STAGING_ROLE_ARN"
+    gh secret set AWS_ROLE_TO_ASSUME -b"$DEVELOPMENT_ROLE_ARN"
     
     echo -e "${BLUE}Setting AWS_ROLE_TO_ASSUME_PROD secret...${NC}"
     gh secret set AWS_ROLE_TO_ASSUME_PROD -b"$PRODUCTION_ROLE_ARN"
@@ -367,7 +367,7 @@ setup_github_secrets() {
     echo -e "${YELLOW}GitHub CLI not available. Please set up the following secrets manually:${NC}"
     echo -e "${YELLOW}1. Go to https://github.com/${GITHUB_OWNER}/${GITHUB_REPO_NAME}/settings/secrets/actions${NC}"
     echo -e "${YELLOW}2. Add the following secrets:${NC}"
-    echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME: ${PREVIEW_STAGING_ROLE_ARN}${NC}"
+    echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME: ${DEVELOPMENT_ROLE_ARN}${NC}"
     echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME_PROD: ${PRODUCTION_ROLE_ARN}${NC}"
     echo -e "${YELLOW}   - AWS_REGION: ${AWS_REGION}${NC}"
   fi
