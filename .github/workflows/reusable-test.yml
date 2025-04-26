@@ -2,16 +2,10 @@ name: Reusable Test Workflow
 
 on:
   workflow_call:
-    inputs:
-      go-version:
-        required: false
-        type: string
-        default: '1.21'
     outputs:
       tests-passed:
         description: "Whether all tests passed"
         value: ${{ jobs.test.outputs.tests-passed }}
-        type: boolean
 
 jobs:
   test:
@@ -27,7 +21,6 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ inputs.go-version }}
           cache: true
           
       - name: Install dependencies
