@@ -69,7 +69,7 @@ func GetEnvironmentFromContext(app awscdk.App) Environment {
 	// Add nil check for app
 	if app == nil {
 		return Environment{
-			Name:      "development",
+			Name:      "unknown",
 			IsPreview: false,
 			Username:  getCurrentUsername(),
 		}
