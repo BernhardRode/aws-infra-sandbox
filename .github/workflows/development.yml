@@ -1,4 +1,4 @@
-name: Deploy to Staging
+name: Deploy to Development
 
 on:
   push:
@@ -10,11 +10,12 @@ permissions:
   contents: read
 
 jobs:
-  deploy-staging:
-    name: Deploy to Staging
+  deploy-development:
+    name: Deploy to Development
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
-      environment: staging
+      environment: development
+      version: ${{ github.sha }}
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       AWS_REGION: ${{ secrets.AWS_REGION }}

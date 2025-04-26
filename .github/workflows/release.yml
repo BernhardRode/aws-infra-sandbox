@@ -26,6 +26,18 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           release-type: go
 
+  deploy-staging:
+    name: Deploy to Staging
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    uses: ./.github/workflows/reusable-aws-deploy.yml
+    with:
+      environment: staging
+      version: ${{ needs.release-please.outputs.tag_name }}
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
   deploy-production:
     name: Deploy to Production
     needs: release-please
