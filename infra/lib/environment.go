@@ -51,6 +51,9 @@ func (e *Environment) GetStackName(suffix string) string {
 		}
 		return e.Name + "-" + username + "-" + kebabCase(suffix)
 	}
+	if e.Name == "preview" {
+		return e.Name + "-" + e.PRNumber + "-" + kebabCase(suffix)
+	}
 
 	return e.Name + "-" + kebabCase(suffix)
 }
