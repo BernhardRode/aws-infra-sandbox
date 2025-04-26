@@ -89,30 +89,30 @@ update: deploy
 # CDK commands
 cdk-synth: $(CDK_OUT_DIR)
 	@echo "Synthesizing CDK stack..."
-	$(CDK) synth --app "go run $(CDK_APP)" $(CDK_OUTDIR_OPTION)
+	$(CDK) synth --app $(CDK_BIN) $(CDK_OUTDIR_OPTION)
 
 cdk-diff: $(CDK_OUT_DIR)
 	@echo "Showing CDK diff..."
-	$(CDK) diff --app "go run $(CDK_APP)" $(CDK_OUTDIR_OPTION)
+	$(CDK) diff --app $(CDK_BIN) $(CDK_OUTDIR_OPTION)
 
 # Deploy the stack
 deploy: build $(CDK_OUT_DIR)
 	@echo "Deploying stack..."
 	@echo "Running CDK deploy with app: $(CDK_APP)"
-	cd $(CDK_DIR) && $(CDK) deploy --app "go run aws-infra-sandbox.go" $(CDK_OUTDIR_OPTION) --all \
+	cd $(CDK_DIR) && $(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
 		--require-approval never
 
 # Destroy the stack
 destroy: $(CDK_OUT_DIR)
 	@echo "Destroying stack..."
-	$(CDK) destroy --app "go run $(CDK_APP)" $(CDK_OUTDIR_OPTION) --all --force
+	$(CDK) destroy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all --force
 
 # Development environment commands
 dev-deploy: build $(CDK_OUT_DIR)
 	@echo "Deploying development stack for $(USERNAME)..."
-	cd $(CDK_DIR) && $(CDK) deploy --app "go run aws-infra-sandbox.go" $(CDK_OUTDIR_OPTION) --all \
+	cd $(CDK_DIR) && $(CDK) deploy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
 		--require-approval never \
-		--context environment=dev \
+		--context environment=development \
 		--context username=$(USERNAME)
 
 dev-create: dev-deploy
@@ -121,15 +121,15 @@ dev-update: dev-deploy
 
 dev-destroy: $(CDK_OUT_DIR)
 	@echo "Destroying development stack for $(USERNAME)..."
-	cd $(CDK_DIR) && $(CDK) destroy --app "go run aws-infra-sandbox.go" $(CDK_OUTDIR_OPTION) --all \
+	cd $(CDK_DIR) && $(CDK) destroy --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
 		--force \
-		--context environment=dev \
+		--context environment=development \
 		--context username=$(USERNAME)
 
 dev-diff: build $(CDK_OUT_DIR)
 	@echo "Showing diff for development stack..."
-	cd $(CDK_DIR) && $(CDK) diff --app "go run aws-infra-sandbox.go" $(CDK_OUTDIR_OPTION) --all \
-		--context environment=dev \
+	cd $(CDK_DIR) && $(CDK) diff --app $(CDK_BIN) $(CDK_OUTDIR_OPTION) --all \
+		--context environment=development \
 		--context username=$(USERNAME)
 
 # Watch mode for development
