@@ -84,13 +84,24 @@ get_github_repo_info() {
   echo -e "${BLUE}Using GitHub repository: ${GITHUB_OWNER}/${GITHUB_REPO_NAME}${NC}"
 }
 
-# Create IAM OIDC provider for GitHub Actions
+# Create or update IAM OIDC provider for GitHub Actions
 create_oidc_provider() {
-  echo -e "${BLUE}Creating IAM OIDC provider for GitHub Actions...${NC}"
+  echo -e "${BLUE}Creating or updating IAM OIDC provider for GitHub Actions...${NC}"
   
   # Check if provider already exists
   if aws iam list-open-id-connect-providers | grep -q "token.actions.githubusercontent.com"; then
-    echo -e "${GREEN}OIDC provider for GitHub Actions already exists.${NC}"
+    echo -e "${BLUE}OIDC provider for GitHub Actions already exists. Checking configuration...${NC}"
+    
+    # Get the ARN of the existing provider
+    PROVIDER_ARN=$(aws iam list-open-id-connect-providers | grep -o "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com")
+    
+    # Update the thumbprint list
+    echo -e "${BLUE}Updating thumbprint list for OIDC provider...${NC}"
+    aws iam update-open-id-connect-provider-thumbprint \
+      --open-id-connect-provider-arn "$PROVIDER_ARN" \
+      --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
+    
+    echo -e "${GREEN}OIDC provider updated successfully.${NC}"
   else
     # Create the OIDC provider
     aws iam create-open-id-connect-provider \
@@ -154,99 +165,159 @@ EOF
   ]
 }
 EOF
+
+  # Create CDK bootstrap policy
+  cat > .aws-github-oidc/cdk-bootstrap-policy.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:DescribeStacks",
+        "ssm:GetParameter"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": [
+        "arn:aws:iam::${AWS_ACCOUNT_ID}:role/cdk-*"
+      ]
+    }
+  ]
+}
+EOF
   
   echo -e "${GREEN}Trust policy files created in .aws-github-oidc/ directory.${NC}"
 }
 
-# Create IAM roles for GitHub Actions
+# Create or update IAM roles for GitHub Actions
 create_iam_roles() {
-  echo -e "${BLUE}Creating IAM roles for GitHub Actions...${NC}"
+  echo -e "${BLUE}Creating or updating IAM roles for GitHub Actions...${NC}"
   
-  # Create role for preview/staging environments
+  # Create or update role for preview/staging environments
   if aws iam get-role --role-name GitHubActionsPreviewStaging &> /dev/null; then
-    echo -e "${GREEN}Role GitHubActionsPreviewStaging already exists.${NC}"
+    echo -e "${BLUE}Role GitHubActionsPreviewStaging already exists. Updating...${NC}"
+    
+    # Update trust policy
+    echo -e "${BLUE}Updating trust policy for GitHubActionsPreviewStaging...${NC}"
+    aws iam update-assume-role-policy \
+      --role-name GitHubActionsPreviewStaging \
+      --policy-document file://.aws-github-oidc/trust-policy-preview-staging.json
+    
     PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
   else
+    echo -e "${BLUE}Creating new GitHubActionsPreviewStaging role...${NC}"
     aws iam create-role \
       --role-name GitHubActionsPreviewStaging \
       --assume-role-policy-document file://.aws-github-oidc/trust-policy-preview-staging.json
     
-    # Attach policies
-    aws iam attach-role-policy \
-      --role-name GitHubActionsPreviewStaging \
-      --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsPreviewStaging \
-      --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsPreviewStaging \
-      --policy-arn arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsPreviewStaging \
-      --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsPreviewStaging \
-      --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsPreviewStaging \
-      --policy-arn arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
-    
-    # Attach SSM permissions for CDK bootstrap version checking
-    aws iam attach-role-policy \
-      --role-name GitHubActionsPreviewStaging \
-      --policy-arn arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
-    
     PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
-    echo -e "${GREEN}Role GitHubActionsPreviewStaging created successfully.${NC}"
   fi
   
-  # Create role for production environment
+  # Attach or update policies for preview/staging role (always do this to ensure latest permissions)
+  echo -e "${BLUE}Updating policies for GitHubActionsPreviewStaging role...${NC}"
+  
+  # Attach managed policies (will not fail if already attached)
+  aws iam attach-role-policy \
+    --role-name GitHubActionsPreviewStaging \
+    --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsPreviewStaging \
+    --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsPreviewStaging \
+    --policy-arn arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsPreviewStaging \
+    --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsPreviewStaging \
+    --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsPreviewStaging \
+    --policy-arn arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+  
+  # Attach SSM permissions for CDK bootstrap version checking
+  aws iam attach-role-policy \
+    --role-name GitHubActionsPreviewStaging \
+    --policy-arn arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+  
+  # Add CDK bootstrap permissions (always update to ensure latest)
+  aws iam put-role-policy \
+    --role-name GitHubActionsPreviewStaging \
+    --policy-name CDKBootstrapAccess \
+    --policy-document file://.aws-github-oidc/cdk-bootstrap-policy.json
+  
+  echo -e "${GREEN}Role GitHubActionsPreviewStaging updated successfully.${NC}"
+  
+  # Create or update role for production environment
   if aws iam get-role --role-name GitHubActionsProduction &> /dev/null; then
-    echo -e "${GREEN}Role GitHubActionsProduction already exists.${NC}"
+    echo -e "${BLUE}Role GitHubActionsProduction already exists. Updating...${NC}"
+    
+    # Update trust policy
+    echo -e "${BLUE}Updating trust policy for GitHubActionsProduction...${NC}"
+    aws iam update-assume-role-policy \
+      --role-name GitHubActionsProduction \
+      --policy-document file://.aws-github-oidc/trust-policy-production.json
+    
     PRODUCTION_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsProduction --query "Role.Arn" --output text)
   else
+    echo -e "${BLUE}Creating new GitHubActionsProduction role...${NC}"
     aws iam create-role \
       --role-name GitHubActionsProduction \
       --assume-role-policy-document file://.aws-github-oidc/trust-policy-production.json
     
-    # Attach policies (same as preview/staging for now)
-    aws iam attach-role-policy \
-      --role-name GitHubActionsProduction \
-      --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsProduction \
-      --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsProduction \
-      --policy-arn arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsProduction \
-      --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsProduction \
-      --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-    
-    aws iam attach-role-policy \
-      --role-name GitHubActionsProduction \
-      --policy-arn arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
-    
-    # Attach SSM permissions for CDK bootstrap version checking
-    aws iam attach-role-policy \
-      --role-name GitHubActionsProduction \
-      --policy-arn arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
-    
     PRODUCTION_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsProduction --query "Role.Arn" --output text)
-    echo -e "${GREEN}Role GitHubActionsProduction created successfully.${NC}"
   fi
+  
+  # Attach or update policies for production role (always do this to ensure latest permissions)
+  echo -e "${BLUE}Updating policies for GitHubActionsProduction role...${NC}"
+  
+  # Attach managed policies (will not fail if already attached)
+  aws iam attach-role-policy \
+    --role-name GitHubActionsProduction \
+    --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsProduction \
+    --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsProduction \
+    --policy-arn arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsProduction \
+    --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsProduction \
+    --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+  
+  aws iam attach-role-policy \
+    --role-name GitHubActionsProduction \
+    --policy-arn arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+  
+  # Attach SSM permissions for CDK bootstrap version checking
+  aws iam attach-role-policy \
+    --role-name GitHubActionsProduction \
+    --policy-arn arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+  
+  # Add CDK bootstrap permissions (always update to ensure latest)
+  aws iam put-role-policy \
+    --role-name GitHubActionsProduction \
+    --policy-name CDKBootstrapAccess \
+    --policy-document file://.aws-github-oidc/cdk-bootstrap-policy.json
+  
+  echo -e "${GREEN}Role GitHubActionsProduction updated successfully.${NC}"
 }
 
 # Set up GitHub repository secrets

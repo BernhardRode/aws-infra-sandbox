@@ -91,19 +91,40 @@ get_github_repo_info() {
   echo -e "${BLUE}Using GitHub repository: ${GITHUB_OWNER}/${GITHUB_REPO_NAME}${NC}"
 }
 
-# Create IAM OIDC provider for GitHub Actions
+# Create or update IAM OIDC provider for GitHub Actions
 create_oidc_provider() {
-  echo -e "${BLUE}Creating IAM OIDC provider for GitHub Actions...${NC}"
+  echo -e "${BLUE}Creating or updating IAM OIDC provider for GitHub Actions...${NC}"
   
   # Check if provider already exists
   if aws iam list-open-id-connect-providers | grep -q "token.actions.githubusercontent.com"; then
-    echo -e "${GREEN}OIDC provider for GitHub Actions already exists.${NC}"
+    echo -e "${BLUE}OIDC provider for GitHub Actions already exists. Checking configuration...${NC}"
+    
+    # Get the ARN of the existing provider
+    PROVIDER_ARN=$(aws iam list-open-id-connect-providers | grep -o "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com")
+
+    # Obtain the thumbprint
+    THUMBPRINT=$(aws iam get-open-id-connect-provider --open-id-connect-provider-arn "$PROVIDER_ARN" --query "ThumbprintList[0]" --output text)
+
+    # Check if the thumbprint is valid
+    if [ -z "$THUMBPRINT" ]; then
+      echo -e "${RED}Thumbprint not found. Please check the provider configuration.${NC}"
+      exit 1
+    fi
+
+    # Update the thumbprint list
+    echo -e "${BLUE}Updating thumbprint list for OIDC provider...${NC}"
+    aws iam update-open-id-connect-provider-thumbprint \
+      --open-id-connect-provider-arn "$PROVIDER_ARN" \
+      --thumbprint-list "$THUMBPRINT"
+  
+    
+    echo -e "${GREEN}OIDC provider updated successfully.${NC}"
   else
     # Create the OIDC provider
     aws iam create-open-id-connect-provider \
       --url https://token.actions.githubusercontent.com \
       --client-id-list sts.amazonaws.com \
-      --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
+      --thumbprint-list "$THUMBPRINT"
     
     echo -e "${GREEN}OIDC provider created successfully.${NC}"
   fi
@@ -186,7 +207,7 @@ EOF
 }
 EOF
   
-  echo -e "${GREEN}Policy files created in .aws-github-oidc/ directory.${NC}"
+  echo -e "${GREEN}Trust policy files created in .aws-github-oidc/ directory.${NC}"
 }
 
 # Create or update IAM roles for GitHub Actions
@@ -198,24 +219,25 @@ create_iam_roles() {
     echo -e "${BLUE}Role GitHubActionsPreviewStaging already exists. Updating...${NC}"
     
     # Update trust policy
+    echo -e "${BLUE}Updating trust policy for GitHubActionsPreviewStaging...${NC}"
     aws iam update-assume-role-policy \
       --role-name GitHubActionsPreviewStaging \
       --policy-document file://.aws-github-oidc/trust-policy-preview-staging.json
     
-    DEVELOPMENT_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
+    PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
   else
     echo -e "${BLUE}Creating new GitHubActionsPreviewStaging role...${NC}"
     aws iam create-role \
       --role-name GitHubActionsPreviewStaging \
       --assume-role-policy-document file://.aws-github-oidc/trust-policy-preview-staging.json
     
-    DEVELOPMENT_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
+    PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPreviewStaging --query "Role.Arn" --output text)
   fi
   
   # Attach or update policies for preview/staging role (always do this to ensure latest permissions)
   echo -e "${BLUE}Updating policies for GitHubActionsPreviewStaging role...${NC}"
   
-  # Attach managed policies
+  # Attach managed policies (will not fail if already attached)
   aws iam attach-role-policy \
     --role-name GitHubActionsPreviewStaging \
     --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
@@ -258,6 +280,7 @@ create_iam_roles() {
     echo -e "${BLUE}Role GitHubActionsProduction already exists. Updating...${NC}"
     
     # Update trust policy
+    echo -e "${BLUE}Updating trust policy for GitHubActionsProduction...${NC}"
     aws iam update-assume-role-policy \
       --role-name GitHubActionsProduction \
       --policy-document file://.aws-github-oidc/trust-policy-production.json
@@ -275,7 +298,7 @@ create_iam_roles() {
   # Attach or update policies for production role (always do this to ensure latest permissions)
   echo -e "${BLUE}Updating policies for GitHubActionsProduction role...${NC}"
   
-  # Attach managed policies
+  # Attach managed policies (will not fail if already attached)
   aws iam attach-role-policy \
     --role-name GitHubActionsProduction \
     --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
@@ -353,7 +376,7 @@ setup_github_secrets() {
   if [ "$HAS_GH" = true ]; then
     # Set secrets using GitHub CLI
     echo -e "${BLUE}Setting AWS_ROLE_TO_ASSUME secret...${NC}"
-    gh secret set AWS_ROLE_TO_ASSUME -b"$DEVELOPMENT_ROLE_ARN"
+    gh secret set AWS_ROLE_TO_ASSUME -b"$PREVIEW_STAGING_ROLE_ARN"
     
     echo -e "${BLUE}Setting AWS_ROLE_TO_ASSUME_PROD secret...${NC}"
     gh secret set AWS_ROLE_TO_ASSUME_PROD -b"$PRODUCTION_ROLE_ARN"
@@ -367,7 +390,7 @@ setup_github_secrets() {
     echo -e "${YELLOW}GitHub CLI not available. Please set up the following secrets manually:${NC}"
     echo -e "${YELLOW}1. Go to https://github.com/${GITHUB_OWNER}/${GITHUB_REPO_NAME}/settings/secrets/actions${NC}"
     echo -e "${YELLOW}2. Add the following secrets:${NC}"
-    echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME: ${DEVELOPMENT_ROLE_ARN}${NC}"
+    echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME: ${PREVIEW_STAGING_ROLE_ARN}${NC}"
     echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME_PROD: ${PRODUCTION_ROLE_ARN}${NC}"
     echo -e "${YELLOW}   - AWS_REGION: ${AWS_REGION}${NC}"
   fi
