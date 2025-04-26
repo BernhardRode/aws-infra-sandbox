@@ -6,15 +6,15 @@ This document explains the CI/CD workflow implemented in this project using GitH
 
 Our CI/CD pipeline automates the deployment process across different environments:
 
-1. **PR PR Environments**: Automatically deployed when a PR is opened
+1. **PR Preview Environments**: Automatically deployed when a PR is opened
 2. **Staging Environment**: Automatically deployed when code is merged to main
 3. **Production Environment**: Automatically deployed when a release is created
 
 ## GitHub Actions Workflows
 
-### PR PR Workflow
+### PR Preview Workflow
 
-**File**: `.github/workflows/pr-pr.yml`
+**File**: `.github/workflows/pr-preview.yml`
 
 This workflow is triggered when a pull request is opened, synchronized, or reopened against the main branch.
 
@@ -23,15 +23,15 @@ This workflow is triggered when a pull request is opened, synchronized, or reope
 2. Set up Go environment
 3. Configure AWS credentials using OIDC federation
 4. Install CDK and dependencies
-5. Deploy a pr environment with a unique name based on the PR number
+5. Deploy a preview environment with a unique name based on the PR number
 6. Add a comment to the PR with links to the deployed resources
-7. Clean up the pr environment when the PR is closed
+7. Clean up the preview environment when the PR is closed
 
 **Usage**:
 - Simply open a PR against the main branch
-- The workflow will automatically deploy a pr environment
+- The workflow will automatically deploy a preview environment
 - The PR will receive a comment with links to the deployed resources
-- When the PR is closed, the pr environment is automatically destroyed
+- When the PR is closed, the preview environment is automatically destroyed
 
 ### Staging Workflow
 
@@ -88,6 +88,21 @@ This workflow is triggered on all pushes to the main branch and on all PRs.
 - This workflow runs automatically on all PRs and pushes to main
 - It ensures that the code builds correctly and passes all tests
 
+## Environment Variables and Parameters
+
+Our GitHub Actions workflows use the updated Makefile syntax for deployments:
+
+```yaml
+# Deploy to preview environment
+make preview-deploy PR_NUMBER=${{ github.event.pull_request.number }}
+
+# Deploy to staging environment
+make deploy ENVIRONMENT=staging
+
+# Deploy to production environment
+make deploy ENVIRONMENT=production VERSION=${{ needs.release-please.outputs.tag_name }}
+```
+
 ## Conventional Commits
 
 This project uses conventional commits to automate versioning:
@@ -105,7 +120,7 @@ Example: `feat: add new lambda function for user authentication`
 
 To use these workflows, you need to set up the following GitHub secrets:
 
-- `AWS_ROLE_TO_ASSUME`: IAM role ARN for staging/pr environments
+- `AWS_ROLE_TO_ASSUME`: IAM role ARN for staging/preview environments
 - `AWS_ROLE_TO_ASSUME_PROD`: IAM role ARN for production environment
 - `AWS_REGION`: AWS region for deployments
 
@@ -113,7 +128,7 @@ To use these workflows, you need to set up the following GitHub secrets:
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Developer  │     │  PR PR │     │   Staging   │     │  Production │
+│  Developer  │     │   Preview   │     │   Staging   │     │  Production │
 │ Environment │     │ Environment │     │ Environment │     │ Environment │
 └──────┬──────┘     └──────┬──────┘     └──────┬──────┘     └──────┬──────┘
        │                   │                   │                   │
@@ -128,9 +143,10 @@ To use these workflows, you need to set up the following GitHub secrets:
 ## Best Practices
 
 1. **Use conventional commits**: This helps with automatic versioning
-2. **Review PR prs**: Always check the pr environment before merging
+2. **Review PR previews**: Always check the preview environment before merging
 3. **Test in staging**: Verify changes in staging before creating a release
 4. **Monitor deployments**: Watch the GitHub Actions logs for any deployment issues
+
 ## Manual Deployment
 
 In addition to the automated CI/CD workflows, this project also includes a manual deployment workflow for controlled deployments of specific versions:
