@@ -1,0 +1,114 @@
+name: PR Preview Environment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    name: Deploy PR Preview
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install CDK
+        run: npm install -g aws-cdk
+
+      - name: Build Lambda functions
+        run: make lambdas
+
+      - name: Deploy PR Preview
+        id: deploy
+        run: |
+          PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+          echo "Deploying PR preview for PR #${PR_NUMBER}"
+          
+          # Deploy with PR-specific stack name
+          cd infra && cdk deploy --app "go run aws-infra-sandbox.go" \
+            --require-approval never \
+            --context environment=preview \
+            --context prNumber=${PR_NUMBER} \
+            --outputs-file ../pr-outputs.json
+          
+          # Extract and format outputs for PR comment
+          OUTPUTS=$(cat ../pr-outputs.json | jq -r 'to_entries[] | "\(.key): \(.value.value)"')
+          echo "outputs<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUTS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const outputs = `${{ steps.deploy.outputs.outputs }}`;
+            const body = `## 🚀 Preview Environment Deployed
+            
+            ### Environment Details:
+            \`\`\`
+            ${outputs}
+            \`\`\`
+            
+            This preview environment will be automatically destroyed when the PR is closed.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  cleanup-preview:
+    name: Cleanup Preview on PR Close
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install CDK
+        run: npm install -g aws-cdk
+
+      - name: Destroy PR Preview
+        run: |
+          PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+          echo "Destroying PR preview for PR #${PR_NUMBER}"
+          
+          cd infra && cdk destroy --app "go run aws-infra-sandbox.go" \
+            --force \
+            --context environment=preview \
+            --context prNumber=${PR_NUMBER}

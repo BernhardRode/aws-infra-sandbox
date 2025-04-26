@@ -1,0 +1,75 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: google-github-actions/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: go
+          package-name: aws-infra-sandbox
+          changelog-types: |
+            [
+              {"type":"feat","section":"Features","hidden":false},
+              {"type":"fix","section":"Bug Fixes","hidden":false},
+              {"type":"chore","section":"Miscellaneous","hidden":false},
+              {"type":"docs","section":"Documentation","hidden":false},
+              {"type":"perf","section":"Performance Improvements","hidden":false},
+              {"type":"refactor","section":"Code Refactoring","hidden":false}
+            ]
+
+  deploy-production:
+    name: Deploy to Production
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install CDK
+        run: npm install -g aws-cdk
+
+      - name: Build Lambda functions
+        run: make lambdas
+
+      - name: Deploy to Production
+        run: |
+          VERSION=${{ needs.release-please.outputs.tag_name }}
+          echo "Deploying version ${VERSION} to production"
+          
+          cd infra && cdk deploy --app "go run aws-infra-sandbox.go" \
+            --require-approval never \
+            --context environment=production \
+            --context version=${VERSION}

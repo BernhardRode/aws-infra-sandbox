@@ -1,0 +1,39 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          cd infra && go mod tidy
+          for dir in functions/*; do
+            if [ -d "$dir" ]; then
+              cd $dir && go mod tidy && cd ../../
+            fi
+          done
+
+      - name: Run tests
+        run: make test
+
+      - name: CDK Synth
+        run: |
+          npm install -g aws-cdk
+          cd infra && cdk synth --app "go run aws-infra-sandbox.go"

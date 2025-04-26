@@ -1,0 +1,43 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install CDK
+        run: npm install -g aws-cdk
+
+      - name: Build Lambda functions
+        run: make lambdas
+
+      - name: Deploy to Staging
+        run: |
+          cd infra && cdk deploy --app "go run aws-infra-sandbox.go" \
+            --require-approval never \
+            --context environment=staging
