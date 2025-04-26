@@ -1,0 +1,103 @@
+name: Reusable AWS Deploy Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      role-to-assume:
+        required: false
+        type: string
+        default: ''
+      aws-region:
+        required: false
+        type: string
+        default: ''
+      version:
+        required: false
+        type: string
+        default: ''
+      pr-number:
+        required: false
+        type: string
+        default: ''
+      outputs-file:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        required: false
+      AWS_ROLE_TO_ASSUME_PROD:
+        required: false
+      AWS_REGION:
+        required: false
+    outputs:
+      deployment-outputs:
+        description: "Outputs from the deployment"
+        value: ${{ jobs.deploy.outputs.deployment-outputs }}
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    outputs:
+      deployment-outputs: ${{ steps.deploy.outputs.outputs }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+          
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.role-to-assume != '' && inputs.role-to-assume || (inputs.environment == 'production' && secrets.AWS_ROLE_TO_ASSUME_PROD || secrets.AWS_ROLE_TO_ASSUME) }}
+          aws-region: ${{ inputs.aws-region != '' && inputs.aws-region || secrets.AWS_REGION }}
+          
+      - name: Install CDK
+        run: npm install -g aws-cdk
+        
+      - name: Install inotify-tools
+        run: sudo apt-get update && sudo apt-get install -y inotify-tools
+        
+      - name: Deploy
+        id: deploy
+        run: |
+          CONTEXT_ARGS=""
+          
+          # Add environment context
+          CONTEXT_ARGS="$CONTEXT_ARGS --context environment=${{ inputs.environment }}"
+          
+          # Add version context if provided
+          if [ -n "${{ inputs.version }}" ]; then
+            CONTEXT_ARGS="$CONTEXT_ARGS --context version=${{ inputs.version }}"
+          fi
+          
+          # Add PR number context if provided
+          if [ -n "${{ inputs.pr-number }}" ]; then
+            CONTEXT_ARGS="$CONTEXT_ARGS --context prNumber=${{ inputs.pr-number }}"
+          fi
+          
+          # Add outputs file if provided
+          OUTPUTS_ARG=""
+          if [ -n "${{ inputs.outputs-file }}" ]; then
+            OUTPUTS_ARG="--outputs-file ${{ inputs.outputs-file }}"
+          fi
+          
+          echo "Deploying to ${{ inputs.environment }} with context: $CONTEXT_ARGS"
+          make deploy -- $CONTEXT_ARGS $OUTPUTS_ARG
+          
+          # Extract and format outputs for PR comment if outputs file exists
+          if [ -n "${{ inputs.outputs-file }}" ] && [ -f "${{ inputs.outputs-file }}" ]; then
+            OUTPUTS=$(cat ${{ inputs.outputs-file }} | jq -r 'to_entries[] | "\(.key): \(.value.value)"')
+            echo "outputs<<EOF" >> $GITHUB_OUTPUT
+            echo "$OUTPUTS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi

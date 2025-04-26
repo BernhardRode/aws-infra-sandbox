@@ -7,8 +7,15 @@ on:
     branches: [ main ]
 
 jobs:
+  setup:
+    name: Setup Environment
+    uses: ./.github/workflows/reusable-setup.yml
+    with:
+      go-version: '1.21'
+
   test:
-    name: Test
+    name: Run Tests
+    needs: setup
     runs-on: ubuntu-latest
     
     steps:
@@ -29,6 +36,9 @@ jobs:
               cd $dir && go mod tidy && cd ../../
             fi
           done
+
+      - name: Install CDK
+        run: npm install -g aws-cdk
 
       - name: Run tests
         run: make test

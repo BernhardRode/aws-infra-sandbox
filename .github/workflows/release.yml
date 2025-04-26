@@ -19,11 +19,19 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
     
     steps:
+      # Create a GitHub App token instead of using GITHUB_TOKEN
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+      
       - name: Run Release Please
         id: release
         uses: googleapis/release-please-action@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.generate_token.outputs.token }}
           release-type: go
           package-name: aws-infra-sandbox
           changelog-types: |
@@ -40,30 +48,11 @@ jobs:
     name: Deploy to Production
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-          cache: true
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Install CDK
-        run: npm install -g aws-cdk
-
-      - name: Deploy to Production
-        run: |
-          VERSION=${{ needs.release-please.outputs.tag_name }}
-          echo "Deploying version ${VERSION} to production"
-          
-          make deploy -- --context environment=production --context version=${VERSION}
+    uses: ./.github/workflows/reusable-aws-deploy.yml
+    with:
+      environment: production
+      version: ${{ needs.release-please.outputs.tag_name }}
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
