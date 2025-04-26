@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.1.0...v1.2.0) (2025-04-26)
+
+
+### Features
+
+* fix deployment to staging/production ([d395f6e](https://github.com/BernhardRode/aws-infra-sandbox/commit/d395f6e51820a30493ddce3d766d649fb2891000))
+
 ## [1.1.0](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.0.0...v1.1.0) (2025-04-26)
 
 
