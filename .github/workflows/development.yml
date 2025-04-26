@@ -14,13 +14,21 @@ env:
   GO_VERSION: '1.21'
 
 jobs:
+  unit-tests:
+    name: Run Unit Tests
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      go-version: ${{ env.GO_VERSION }}
+
   deploy-development:
     name: Deploy to Development
+    needs: unit-tests
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: development
       version: ${{ github.sha }}
       go-version: ${{ env.GO_VERSION }}
+      skip-tests: true  # Tests already ran in the unit-tests job
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}

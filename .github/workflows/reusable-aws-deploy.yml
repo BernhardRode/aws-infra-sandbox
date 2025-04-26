@@ -30,6 +30,10 @@ on:
         required: false
         type: string
         default: '1.21'
+      skip-tests:
+        required: false
+        type: boolean
+        default: false
     secrets:
       AWS_ROLE_TO_ASSUME:
         required: false
@@ -43,14 +47,25 @@ on:
         value: ${{ jobs.deploy.outputs.deployment-outputs }}
 
 jobs:
+  test:
+    name: Run Unit Tests
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      go-version: ${{ inputs.go-version }}
+    if: ${{ !inputs.skip-tests }}
+      
   setup:
+    name: Setup Environment
+    needs: [test]
     uses: ./.github/workflows/reusable-setup.yml
     with:
       go-version: ${{ inputs.go-version }}
+    if: ${{ always() && (inputs.skip-tests || needs.test.result == 'success') }}
       
   deploy:
     name: Deploy to ${{ inputs.environment }}
-    needs: setup
+    needs: [test, setup]
+    if: ${{ always() && (inputs.skip-tests || needs.test.result == 'success') && needs.setup.result == 'success' }}
     runs-on: ubuntu-latest
     outputs:
       deployment-outputs: ${{ steps.deploy.outputs.outputs }}

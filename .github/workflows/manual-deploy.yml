@@ -20,6 +20,11 @@ on:
         description: 'Version label for the deployment (optional)'
         required: false
         type: string
+      skip_tests:
+        description: 'Skip unit tests'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   id-token: write
@@ -30,13 +35,23 @@ env:
   GO_VERSION: '1.21'
 
 jobs:
+  unit-tests:
+    name: Run Unit Tests
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      go-version: ${{ env.GO_VERSION }}
+    if: ${{ !inputs.skip_tests }}
+
   deploy:
     name: Deploy to ${{ github.event.inputs.environment }}
+    needs: unit-tests
+    if: ${{ always() && (inputs.skip_tests || needs.unit-tests.result == 'success') }}
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: ${{ github.event.inputs.environment }}
       version: ${{ github.event.inputs.version || github.event.inputs.ref }}
       go-version: ${{ env.GO_VERSION }}
+      skip-tests: true  # Tests already ran in the unit-tests job
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}

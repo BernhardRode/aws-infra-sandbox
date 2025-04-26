@@ -11,15 +11,15 @@ env:
   GO_VERSION: '1.21'
 
 jobs:
-  setup:
-    name: Setup Environment
-    uses: ./.github/workflows/reusable-setup.yml
+  unit-tests:
+    name: Run Unit Tests
+    uses: ./.github/workflows/reusable-test.yml
     with:
       go-version: ${{ env.GO_VERSION }}
 
-  test:
-    name: Run Tests
-    needs: setup
+  cdk-synth:
+    name: CDK Synthesis
+    needs: unit-tests
     runs-on: ubuntu-latest
     
     steps:
@@ -32,17 +32,8 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Install dependencies
-        run: |
-          cd infra && go mod tidy
-          for dir in functions/*; do
-            if [ -d "$dir" ]; then
-              cd $dir && go mod tidy && cd ../../
-            fi
-          done
-
-      - name: Run tests
-        run: make test
+      - name: Install CDK
+        run: npm install -g aws-cdk
 
       - name: CDK Synth
         run: make cdk-synth
