@@ -56,36 +56,34 @@ jobs:
       - name: Deploy
         id: deploy
         run: |
-          CONTEXT_ARGS=""
+          # Build the application
+          make build
           
-          # Add environment context
-          CONTEXT_ARGS="$CONTEXT_ARGS --context environment=${{ inputs.environment }}"
+          # Prepare deployment command with environment
+          DEPLOY_CMD="make deploy ENVIRONMENT=${{ inputs.environment }}"
           
-          # Add git sha context
-          CONTEXT_ARGS="$CONTEXT_ARGS --context sha=${{ github.sha }}"
+          # Add git sha
+          DEPLOY_CMD="$DEPLOY_CMD SHA=${{ github.sha }}"
           
-          # Add version context if provided
+          # Add version if provided
           if [ -n "${{ inputs.version }}" ]; then
-            CONTEXT_ARGS="$CONTEXT_ARGS --context version=${{ inputs.version }}"
+            DEPLOY_CMD="$DEPLOY_CMD VERSION=${{ inputs.version }}"
           fi
           
-          # Add PR number context if provided
+          # Add PR number if provided
           if [ -n "${{ inputs.pr-number }}" ]; then
-            CONTEXT_ARGS="$CONTEXT_ARGS --context prNumber=${{ inputs.pr-number }}"
+            DEPLOY_CMD="$DEPLOY_CMD PR_NUMBER=${{ inputs.pr-number }}"
           fi
           
           # Add outputs file if provided
-          OUTPUTS_ARG=""
           if [ -n "${{ inputs.outputs-file }}" ]; then
-            OUTPUTS_ARG="--outputs-file ${{ inputs.outputs-file }}"
+            DEPLOY_CMD="$DEPLOY_CMD -- --outputs-file ${{ inputs.outputs-file }}"
           fi
           
-          echo "Deploying to ${{ inputs.environment }} with context: $CONTEXT_ARGS"
-          echo "CONTEXT_ARGS: $CONTEXT_ARGS"
-          echo "OUTPUTS_ARG: $OUTPUTS_ARG"
+          echo "Deploying to ${{ inputs.environment }} with command: $DEPLOY_CMD"
           
-          make build
-          make deploy -- $CONTEXT_ARGS $OUTPUTS_ARG --all
+          # Execute the deployment
+          $DEPLOY_CMD
           
           # Extract and format outputs for PR comment if outputs file exists
           if [ -n "${{ inputs.outputs-file }}" ] && [ -f "${{ inputs.outputs-file }}" ]; then
