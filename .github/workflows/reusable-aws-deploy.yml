@@ -43,6 +43,12 @@ jobs:
       deployment-outputs: ${{ steps.deploy.outputs.outputs }}
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Go
+        uses: actions/setup-go@v5
+          
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -51,6 +57,7 @@ jobs:
           
       - name: Install CDK
         run: npm install -g aws-cdk
+
         
       - name: Deploy
         id: deploy
@@ -80,7 +87,7 @@ jobs:
           fi
           
           echo "Deploying to ${{ inputs.environment }} with context: $CONTEXT_ARGS"
-          make
+          make build
           make deploy -- $CONTEXT_ARGS $OUTPUTS_ARG --all
           
           # Extract and format outputs for PR comment if outputs file exists
