@@ -3,7 +3,7 @@ name: Deploy to Development
 on:
   push:
     branches:
-      - main
+      - development
 
 permissions:
   id-token: write
@@ -18,4 +18,5 @@ jobs:
       version: ${{ github.sha }}
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      AWS_ROLE_TO_ASSUME_PROD: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
       AWS_REGION: ${{ secrets.AWS_REGION }}

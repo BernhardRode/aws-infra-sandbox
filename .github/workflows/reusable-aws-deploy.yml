@@ -26,6 +26,13 @@ on:
         required: false
         type: string
         default: ''
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        required: false
+      AWS_ROLE_TO_ASSUME_PROD:
+        required: false
+      AWS_REGION:
+        required: false
     outputs:
       deployment-outputs:
         description: "Outputs from the deployment"
@@ -56,6 +63,9 @@ jobs:
           
       - name: Install CDK
         run: npm install -g aws-cdk
+        
+      - name: Install inotify-tools
+        run: sudo apt-get update && sudo apt-get install -y inotify-tools
         
       - name: Deploy
         id: deploy
