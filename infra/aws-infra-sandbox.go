@@ -12,41 +12,36 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3assets"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	
+
 	"aws-infra-sandbox/lib"
 )
 
-type AwsInfraSandboxStackProps struct {
+type StackProps struct {
 	awscdk.StackProps
+	Environment lib.Environment
 }
 
-func CoreInfraSandboxStack(scope constructs.Construct, id string, props *AwsInfraSandboxStackProps) awscdk.Stack {
+func CoreStack(scope constructs.Construct, id string, props *StackProps) awscdk.Stack {
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.StackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 	
-	// Get environment information
-	app := awscdk.App_Of(scope)
-	environment := lib.GetEnvironmentFromContext(app)
-	
-	// Add core infrastructure resources here
-	// These resources will be shared across all environments
-	
+	// Add environment tags to all resources
+	awscdk.NewCfnOutput(stack, jsii.String("Username"), &awscdk.CfnOutputProps{
+		Value: jsii.String(props.Environment.Username),
+	})
+
 	return stack
 }
 
-func NewAwsInfraSandboxStack(scope constructs.Construct, id string, props *AwsInfraSandboxStackProps) awscdk.Stack {
+func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscdk.Stack {
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.StackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
-
-	// Get environment information
-	app := awscdk.App_Of(scope)
-	environment := lib.GetEnvironmentFromContext(app)
 
 	// iterate over all folders in functions and create lambdas
 	// read the folders from functions folder, from the filesystem and operating system
@@ -59,13 +54,13 @@ func NewAwsInfraSandboxStack(scope constructs.Construct, id string, props *AwsIn
 	for _, folder := range folders {
 		// Create a LamdaFn Name from the folder name which will be like foo-bar, just parse the string
 		folderName := toPascalCase(folder)
-		
-		// Create environment-specific resource names
-		lambdaName := environment.GetResourceName(folderName + "LambdaFn")
-		apiName := environment.GetResourceName(folder + "Endpoint")
-		
+		lambdaName := props.Environment.Name + "-" + props.Environment.Username + "-" + folderName
+		apiName := props.Environment.Name + "-" + props.Environment.Username + "-" + folder
+		fmt.Println("lambdaName:", lambdaName)
+		fmt.Println("apiName:", apiName)
+
 		// Create the Lambda function
-		lambdaFn := awslambda.NewFunction(stack, jsii.String(lambdaName), &awslambda.FunctionProps{
+		lambdaFn := awslambda.NewFunction(stack, jsii.String(folderName+"LambdaFn"), &awslambda.FunctionProps{
 			Code:         awslambda.Code_FromAsset(jsii.String("../build/dist/"+folder+".zip"), &awss3assets.AssetOptions{}),
 			Timeout:      awscdk.Duration_Seconds(jsii.Number(300)),
 			Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
@@ -75,11 +70,11 @@ func NewAwsInfraSandboxStack(scope constructs.Construct, id string, props *AwsIn
 		})
 
 		// Create API Gateway with Lambda integration
-		api := awsapigateway.NewLambdaRestApi(stack, jsii.String(apiName), &awsapigateway.LambdaRestApiProps{
-			Handler: lambdaFn,
+		api := awsapigateway.NewLambdaRestApi(stack, jsii.String(folder+"Endpoint"), &awsapigateway.LambdaRestApiProps{
+			Handler:     lambdaFn,
 			RestApiName: jsii.String(apiName),
 		})
-		
+
 		// Add API URL as stack output
 		awscdk.NewCfnOutput(stack, jsii.String(folder+"ApiUrl"), &awscdk.CfnOutputProps{
 			Value: api.Url(),
@@ -132,12 +127,14 @@ func main() {
 	defer jsii.Close()
 
 	app := awscdk.NewApp(nil)
-	
+
 	// Get environment information from context
 	environment := lib.GetEnvironmentFromContext(app)
-	
+
 	// Add environment tags to all resources
 	awscdk.Tags_Of(app).Add(jsii.String("Environment"), jsii.String(environment.Name), nil)
+	awscdk.Tags_Of(app).Add(jsii.String("Username"), jsii.String(environment.Username), nil)
+	
 	if environment.IsPreview {
 		awscdk.Tags_Of(app).Add(jsii.String("Preview"), jsii.String("true"), nil)
 		awscdk.Tags_Of(app).Add(jsii.String("PR"), jsii.String(environment.PRNumber), nil)
@@ -145,23 +142,22 @@ func main() {
 	if environment.Version != "" {
 		awscdk.Tags_Of(app).Add(jsii.String("Version"), jsii.String(environment.Version), nil)
 	}
-	
-	// Create stacks with environment-specific names
-	coreStackName := environment.GetStackName("CoreInfraSandboxStack")
-	appStackName := environment.GetStackName("AwsInfraSandboxStack")
-	
-	CoreInfraSandboxStack(app, coreStackName, &AwsInfraSandboxStackProps{
-		awscdk.StackProps{
-			Env: env(),
-		},
-	})
 
-	stack := NewAwsInfraSandboxStack(app, appStackName, &AwsInfraSandboxStackProps{
-		awscdk.StackProps{
+	// Create stacks with environment-specific names
+	coreStackName := environment.GetStackName("CoreStack")
+	lambdaStackName := environment.GetStackName("LambdaStack")
+
+	// Create props with environment information
+	props := &StackProps{
+		StackProps: awscdk.StackProps{
 			Env: env(),
 		},
-	})
-	
+		Environment: environment,
+	}
+
+	CoreStack(app, coreStackName, props)
+	stack := LambdaStack(app, lambdaStackName, props)
+
 	// Add stack outputs for PR environments
 	if environment.IsPreview {
 		awscdk.NewCfnOutput(stack, jsii.String("EnvironmentType"), &awscdk.CfnOutputProps{
@@ -174,8 +170,6 @@ func main() {
 
 	app.Synth(nil)
 }
-
-// Keep your existing env() function as is
 
 // env determines the AWS environment (account+region) in which our stack is to
 // be deployed. For more information see: https://docs.aws.amazon.com/cdk/latest/guide/environments.html

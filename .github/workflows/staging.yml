@@ -33,11 +33,9 @@ jobs:
       - name: Install CDK
         run: npm install -g aws-cdk
 
-      - name: Build Lambda functions
-        run: make lambdas
+      - name: Install inotify-tools
+        run: sudo apt-get update && sudo apt-get install -y inotify-tools
 
       - name: Deploy to Staging
         run: |
-          cd infra && cdk deploy --app "go run aws-infra-sandbox.go" \
-            --require-approval never \
-            --context environment=staging
+          make deploy -- --context environment=staging

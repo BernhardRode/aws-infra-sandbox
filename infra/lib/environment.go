@@ -1,7 +1,8 @@
 package lib
 
 import (
-	"fmt"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2"
@@ -13,77 +14,97 @@ type Environment struct {
 	Name      string
 	PRNumber  string
 	Version   string
+	Username  string
 	IsPreview bool
+}
+
+// getCurrentUsername retrieves the current username from the environment variables
+func getCurrentUsername() string {
+	username := os.Getenv("USER")
+	if username == "" {
+		username = os.Getenv("USERNAME")
+	}
+	if len(username) == 0 {
+		username = "default"
+	}
+	return username
+}
+
+// kebabCase converts a string to kebab-case
+func kebabCase(s string) string {
+	// Split the string by uppercase letters
+	words := regexp.MustCompile("[A-Z][^A-Z]*").FindAllString(s, -1)
+	// Join the words with a hyphen
+	kebab := strings.Join(words, "-")
+	return strings.ToLower(kebab)
+}
+
+func (e *Environment) GetStackName(suffix string) string {
+	println("Environment Name: ", e.Name)
+	println("Environment Username: ", e.Username)
+	println("Environment Version: ", e.Version)
+	if e.Name == "development" {
+		// If username is empty, use the current username
+		username := e.Username
+		if username == "" {
+			username = getCurrentUsername()
+		}
+		return e.Name + "-" + username + "-" + kebabCase(suffix)
+	}
+
+	return e.Name + "-" + kebabCase(suffix)
 }
 
 // GetEnvironmentFromContext extracts environment information from CDK context
 func GetEnvironmentFromContext(app awscdk.App) Environment {
+	// Add nil check for app
+	if app == nil {
+		return Environment{
+			Name:      "development",
+			IsPreview: false,
+			Username:  getCurrentUsername(),
+		}
+	}
+
 	envName := app.Node().TryGetContext(jsii.String("environment"))
 	prNumber := app.Node().TryGetContext(jsii.String("prNumber"))
 	version := app.Node().TryGetContext(jsii.String("version"))
+	username := app.Node().TryGetContext(jsii.String("username"))
 
 	env := Environment{
-		Name:      "dev",
+		Name:      "development",
 		IsPreview: false,
 	}
 
 	if envName != nil {
-		env.Name = *envName.(*string)
+		if nameStr, ok := envName.(string); ok {
+			env.Name = nameStr
+		}
 	}
 
 	if prNumber != nil {
-		env.PRNumber = *prNumber.(*string)
-		env.IsPreview = true
+		if prStr, ok := prNumber.(string); ok {
+			env.PRNumber = prStr
+			env.IsPreview = true
+		}
 	}
 
 	if version != nil {
-		env.Version = *version.(*string)
+		if versionStr, ok := version.(string); ok {
+			env.Version = versionStr
+		}
+	}
+
+	// Set username from context or use current username as fallback
+	if username != nil {
+		if usernameStr, ok := username.(string); ok && usernameStr != "" {
+			env.Username = usernameStr
+		} else {
+			env.Username = getCurrentUsername()
+		}
+	} else {
+		env.Username = getCurrentUsername()
 	}
 
 	return env
-}
-
-// GetStackName generates a stack name based on environment
-func (e *Environment) GetStackName(baseName string) string {
-	if e.IsPreview && e.PRNumber != "" {
-		return fmt.Sprintf("%s-pr-%s", baseName, e.PRNumber)
-	}
-	
-	if e.Name != "production" {
-		return fmt.Sprintf("%s-%s", baseName, e.Name)
-	}
-	
-	return baseName
-}
-
-// GetResourceName generates a resource name with environment suffix
-func (e *Environment) GetResourceName(baseName string) string {
-	if e.IsPreview && e.PRNumber != "" {
-		return fmt.Sprintf("%s-pr%s", baseName, e.PRNumber)
-	}
-	
-	if e.Name != "production" {
-		return fmt.Sprintf("%s-%s", baseName, e.Name)
-	}
-	
-	return baseName
-}
-
-// GetTags returns common tags for resources
-func (e *Environment) GetTags() map[string]*string {
-	tags := map[string]*string{
-		"Environment": jsii.String(e.Name),
-		"ManagedBy":   jsii.String("CDK"),
-	}
-	
-	if e.IsPreview {
-		tags["Preview"] = jsii.String("true")
-		tags["PR"] = jsii.String(e.PRNumber)
-	}
-	
-	if e.Version != "" {
-		tags["Version"] = jsii.String(e.Version)
-	}
-	
-	return tags
 }

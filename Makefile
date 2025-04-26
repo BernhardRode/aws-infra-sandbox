@@ -2,8 +2,8 @@
 CDK_DIR = infra
 FUNCTIONS_DIR = functions
 BUILD_DIR = build
-BIN_DIR = $(BUILD_DIR)/bin
-DIST_DIR = $(BUILD_DIR)/dist
+BIN_DIR = $(shell pwd)/$(BUILD_DIR)/bin
+DIST_DIR = $(shell pwd)/$(BUILD_DIR)/dist
 
 # Go build flags
 GOOS = linux
@@ -13,14 +13,21 @@ CGO_ENABLED = 0
 # AWS CDK commands
 CDK = cdk
 CDK_APP = $(shell pwd)/$(CDK_DIR)/aws-infra-sandbox.go
+CDK_BIN = $(BIN_DIR)/aws-infra-sandbox
+
+# Get the current username from the environment
+USERNAME := $(shell whoami)
+
+# Environment settings
+DEV_STACK_NAME = $(USERNAME)-dev
 
 # Get function names
 FUNCTION_NAMES = $(notdir $(wildcard $(FUNCTIONS_DIR)/*))
 
-.PHONY: all clean build deploy destroy lambdas cdk-synth cdk-diff $(FUNCTION_NAMES)
+.PHONY: all clean build deploy destroy dev-deploy dev-destroy dev-diff watch-dev watch-dev-poll create update dev-create dev-update watch lambdas cdk-synth cdk-diff $(FUNCTION_NAMES)
 
 # Default target
-all: clean build deploy
+all: clean build
 
 # Create build directories
 $(BUILD_DIR):
@@ -50,16 +57,15 @@ lambdas: $(BIN_DIR) $(DIST_DIR)
 			go mod init $(FUNCTIONS_DIR)/$$func; \
 			go mod tidy; \
 		fi && \
-		GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go build -o $(CURDIR)/$(BIN_DIR)/$$func && \
-		cd $(CURDIR)/$(BIN_DIR) && \
+		GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go build -o $(BIN_DIR)/$$func && \
+		cd $(BIN_DIR) && \
 		cp $$func bootstrap && \
 		chmod 755 bootstrap && \
-		zip -j $(CURDIR)/$(DIST_DIR)/$$func.zip bootstrap && \
+		zip -j $(DIST_DIR)/$$func.zip bootstrap && \
 		rm bootstrap && \
 		echo "Lambda build complete: $$func"; \
 	done
 	@echo "All Lambda functions built"
-
 
 # Build both Lambda and CDK
 build: $(BIN_DIR) lambdas
@@ -70,28 +76,106 @@ build: $(BIN_DIR) lambdas
 		go mod init aws-infra-sandbox && \
 		go mod tidy; \
 	fi && \
-	go build -o $(CURDIR)/$(BIN_DIR)/aws-infra-sandbox
-	@echo "Build complete"
+	go build -o $(CDK_BIN)
+	chmod +x $(CDK_BIN)
+	@echo "CDK app built: $(CDK_BIN)"
+
+# Create a new stack (alias for deploy)
+create: deploy
+
+# Update an existing stack (alias for deploy)
+update: deploy
 
 # CDK commands
 cdk-synth:
 	@echo "Synthesizing CDK stack..."
-	$(CDK) synth --app "go run $(CDK_APP)"
+	$(CDK) synth --app $(CDK_BIN)
 
 cdk-diff:
 	@echo "Showing CDK diff..."
-	$(CDK) diff --app "go run $(CDK_APP)"
+	$(CDK) diff --app $(CDK_BIN)
 
-# Deploy the stack
+# Deploy the stack with the username in the stack name
 deploy: build
 	@echo "Deploying stack..."
-	@echo "Running CDK deploy with app: $(CDK_APP)"
-	cd $(CDK_DIR) && $(CDK) deploy --app "go run aws-infra-sandbox.go" --require-approval never
+	cd $(CDK_DIR) && $(CDK) deploy --app $(CDK_BIN) --all \
+		--require-approval never \
+		--context environment=development \
+		--context username=$(USERNAME)
 
 # Destroy the stack
 destroy:
 	@echo "Destroying stack..."
-	$(CDK) destroy --app "go run $(CDK_APP)" --force
+	$(CDK) destroy --app $(CDK_BIN) --force
+
+# Development environment commands
+dev-deploy: build
+	@echo "Deploying development stack for $(USERNAME)..."
+	cd $(CDK_DIR) && $(CDK) deploy --app $(CDK_BIN) --all \
+		--require-approval never \
+		--context environment=development \
+		--context username=$(USERNAME)
+
+dev-create: dev-deploy
+
+dev-update: dev-deploy
+
+dev-destroy:
+	@echo "Destroying development stack for $(USERNAME)..."
+	cd $(CDK_DIR) && $(CDK) destroy --app $(CDK_BIN) \
+		--force \
+		--require-approval never \
+		--context environment=development \
+		--context username=$(USERNAME)
+
+dev-diff: build
+	@echo "Showing diff for development stack..."
+	cd $(CDK_DIR) && $(CDK) diff --app $(CDK_BIN) \
+		--require-approval never \
+		--context environment=development \
+		--context username=$(USERNAME)
+
+# Watch mode for development
+watch-dev:
+	@echo "Watching for changes and deploying to development environment..."
+	@echo "Press Ctrl+C to stop watching"
+	@echo "Note: This requires inotifywait. Install with: sudo apt-get install inotify-tools"
+	@if command -v inotifywait > /dev/null; then \
+		touch .watch-timestamp; \
+		while true; do \
+			make dev-deploy; \
+			echo "Watching for changes. Press Ctrl+C to stop."; \
+			inotifywait -r -e modify,create,delete,move $(CDK_DIR) $(FUNCTIONS_DIR) || break; \
+			echo "Changes detected, rebuilding and redeploying..."; \
+		done; \
+	else \
+		echo "Error: inotifywait not found. Install with: sudo apt-get install inotify-tools"; \
+		echo "Falling back to polling mode..."; \
+		make watch-dev-poll; \
+	fi
+
+# Alternative watch mode using polling (no dependencies)
+watch-dev-poll:
+	@echo "Watching for changes and deploying to development environment (polling mode)..."
+	@echo "Press Ctrl+C to stop watching"
+	@touch .watch-timestamp; \
+	while true; do \
+		make dev-deploy; \
+		echo "Watching for changes. Press Ctrl+C to stop."; \
+		sleep 5; \
+		if [ -n "$$(find $(CDK_DIR) $(FUNCTIONS_DIR) -type f -name "*.go" -newer .watch-timestamp 2>/dev/null)" ]; then \
+			echo "Changes detected, rebuilding and redeploying..."; \
+			touch .watch-timestamp; \
+		fi; \
+	done
+
+# General watch command that chooses the appropriate implementation
+watch:
+	@if command -v inotifywait > /dev/null; then \
+		make watch-dev; \
+	else \
+		make watch-dev-poll; \
+	fi
 
 # Run tests
 test:
@@ -101,11 +185,6 @@ test:
 		(cd $$dir && go test -v ./...); \
 	done
 	cd $(CDK_DIR) && go test -v ./...
-
-# Development helper to watch for changes and rebuild
-watch:
-	@echo "Watching for changes..."
-	find . -name "*.go" | entr -r make build
 
 # List all functions
 list-functions:
@@ -121,11 +200,25 @@ help:
 	@echo "  clean          - Remove build artifacts"
 	@echo "  build          - Build all Lambda functions and CDK app"
 	@echo "  lambdas        - Build all Lambda functions"
+	@echo "  create         - Create a new stack (alias for deploy)"
+	@echo "  update         - Update an existing stack (alias for deploy)"
 	@echo "  deploy         - Deploy the stack to AWS"
 	@echo "  destroy        - Destroy the stack from AWS"
+	@echo "  dev-create     - Create development stack for $(USERNAME)"
+	@echo "  dev-update     - Update development stack for $(USERNAME)"
+	@echo "  dev-deploy     - Deploy development stack for $(USERNAME)"
+	@echo "  dev-destroy    - Destroy development stack for $(USERNAME)"
+	@echo "  dev-diff       - Show changes to be deployed to development stack"
+	@echo "  watch          - Watch for changes and auto-deploy (smart detection)"
+	@echo "  watch-dev      - Watch for changes with inotify (requires inotify-tools)"
+	@echo "  watch-dev-poll - Watch for changes using polling (no dependencies)"
 	@echo "  test           - Run tests"
 	@echo "  cdk-synth      - Synthesize CDK stack"
 	@echo "  cdk-diff       - Show changes to be deployed"
-	@echo "  watch          - Watch for changes and rebuild"
 	@echo "  list-functions - List all available functions"
-	@echo "  debug          - Show debug information about paths"
+	@echo "  setup-github   - Set up GitHub Actions with AWS IAM Identity Federation"
+# Setup GitHub Actions with AWS IAM Identity Federation
+setup-github:
+	@echo "Setting up GitHub Actions with AWS IAM Identity Federation..."
+	@./scripts/setup-github-aws-federation.sh
+	@echo "  setup-github    - Set up GitHub Actions with AWS IAM Identity Federation"
