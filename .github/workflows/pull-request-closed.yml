@@ -27,10 +27,13 @@ jobs:
       - name: Install CDK
         run: npm install -g aws-cdk
 
-      - name: Destroy PR PR
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Destroy PR Environment
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          echo "Destroying PR pr for PR #${PR_NUMBER}"
+          echo "Destroying PR environment for PR #${PR_NUMBER}"
           
           make pr-destroy PR_NUMBER=${PR_NUMBER}
 
