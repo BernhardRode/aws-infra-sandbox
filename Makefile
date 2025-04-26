@@ -107,6 +107,7 @@ deploy: build $(CDK_OUT_DIR)
 		--context environment=$(ENVIRONMENT) \
 		$(if $(PR_NUMBER),--context pr_number=$(PR_NUMBER),) \
 		$(if $(USERNAME),--context username=$(USERNAME),) \
+		$(if $(VERSION),--context version=$(VERSION),) \
 		$(if $(SHA),--context sha=$(SHA),)
 
 # Destroy the stack
