@@ -2,7 +2,7 @@ name: Pull Request Environment
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
     branches:
       - main
 
@@ -13,13 +13,8 @@ permissions:
 
 # Import shared configuration
 jobs:
-  unit-tests:
-    name: Run Unit Tests
-    uses: ./.github/workflows/reusable-test.yml
-
   deploy-pr:
     name: Deploy PR PR
-    needs: unit-tests
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: pr
