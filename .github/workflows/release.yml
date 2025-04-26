@@ -45,7 +45,7 @@ jobs:
       environment: staging
       version: ${{ needs.release-please.outputs.tag_name }}
     secrets:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_STAGING }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
 
   test-staging:
@@ -93,5 +93,5 @@ jobs:
       environment: production
       version: ${{ needs.release-please.outputs.tag_name }}
     secrets:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_PRODUCTION }}
       AWS_REGION: ${{ secrets.AWS_REGION }}

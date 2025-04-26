@@ -26,7 +26,7 @@ jobs:
       pr-number: ${{ github.event.pull_request.number }}
       outputs-file: pr-outputs.json
     secrets:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_DEVELOPMENT }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
 
   comment-pr:
@@ -65,7 +65,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEVELOPMENT }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install CDK
