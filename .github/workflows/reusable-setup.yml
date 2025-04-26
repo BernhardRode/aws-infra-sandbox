@@ -20,6 +20,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           cache: true
+          go-version: ${{ inputs.go-version }}
           
       - name: Install CDK
         run: npm install -g aws-cdk
