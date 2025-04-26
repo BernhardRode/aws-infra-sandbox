@@ -40,6 +40,8 @@ func kebabCase(s string) string {
 }
 
 func (e *Environment) GetStackName(suffix string) string {
+	firstChar := string(e.Name[0])
+
 	if e.Name == "pr" {
 		return e.Name + "-" + e.PRNumber + "-" + kebabCase(suffix)
 	}
@@ -49,10 +51,11 @@ func (e *Environment) GetStackName(suffix string) string {
 		if username == "" {
 			username = getCurrentUsername()
 		}
-		return e.Name + "-" + username + "-" + kebabCase(suffix)
+		// get the first char of e.Name
+		return firstChar + "-" + username + "-" + kebabCase(suffix)
 	}
 
-	return e.Name + "-" + kebabCase(suffix)
+	return firstChar + "-" + kebabCase(suffix)
 }
 
 // GetEnvironmentFromContext extracts environment information from CDK context
