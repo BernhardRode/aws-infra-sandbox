@@ -349,6 +349,13 @@ setup_github_secrets() {
     echo -e "${BLUE}Setting AWS_ROLE_TO_ASSUME_PRODUCTION secret...${NC}"
     gh secret set AWS_ROLE_TO_ASSUME_PRODUCTION -b"$PRODUCTION_ROLE_ARN"
     
+    # For backward compatibility, also set the generic role secrets
+    echo -e "${BLUE}Setting AWS_ROLE_TO_ASSUME secret (for backward compatibility)...${NC}"
+    gh secret set AWS_ROLE_TO_ASSUME -b"$DEVELOPMENT_ROLE_ARN"
+    
+    echo -e "${BLUE}Setting AWS_ROLE_TO_ASSUME_PROD secret (for backward compatibility)...${NC}"
+    gh secret set AWS_ROLE_TO_ASSUME_PROD -b"$PRODUCTION_ROLE_ARN"
+    
     echo -e "${BLUE}Setting AWS_REGION secret...${NC}"
     gh secret set AWS_REGION -b"$AWS_REGION"
     
@@ -361,6 +368,8 @@ setup_github_secrets() {
     echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME_DEVELOPMENT: ${DEVELOPMENT_ROLE_ARN}${NC}"
     echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME_STAGING: ${STAGING_ROLE_ARN}${NC}"
     echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME_PRODUCTION: ${PRODUCTION_ROLE_ARN}${NC}"
+    echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME: ${DEVELOPMENT_ROLE_ARN} (for backward compatibility)${NC}"
+    echo -e "${YELLOW}   - AWS_ROLE_TO_ASSUME_PROD: ${PRODUCTION_ROLE_ARN} (for backward compatibility)${NC}"
     echo -e "${YELLOW}   - AWS_REGION: ${AWS_REGION}${NC}"
   fi
 }
@@ -384,6 +393,13 @@ main() {
   echo -e "${GREEN}  Development: ${DEVELOPMENT_ROLE_ARN}${NC}"
   echo -e "${GREEN}  Staging: ${STAGING_ROLE_ARN}${NC}"
   echo -e "${GREEN}  Production: ${PRODUCTION_ROLE_ARN}${NC}"
+  echo -e "${BLUE}The following GitHub secrets have been set:${NC}"
+  echo -e "${BLUE}  - AWS_ROLE_TO_ASSUME_DEVELOPMENT${NC}"
+  echo -e "${BLUE}  - AWS_ROLE_TO_ASSUME_STAGING${NC}"
+  echo -e "${BLUE}  - AWS_ROLE_TO_ASSUME_PRODUCTION${NC}"
+  echo -e "${BLUE}  - AWS_ROLE_TO_ASSUME (for backward compatibility)${NC}"
+  echo -e "${BLUE}  - AWS_ROLE_TO_ASSUME_PROD (for backward compatibility)${NC}"
+  echo -e "${BLUE}  - AWS_REGION${NC}"
 }
 
 # Run the main function
