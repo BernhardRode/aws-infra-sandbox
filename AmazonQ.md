@@ -39,8 +39,9 @@ The project uses a custom environment management system to handle different depl
 
 To use these workflows, you need to set up the following GitHub secrets:
 
-- `AWS_ROLE_TO_ASSUME`: IAM role ARN for staging/pr environments
-- `AWS_ROLE_TO_ASSUME_PROD`: IAM role ARN for production environment
+- `AWS_ROLE_TO_ASSUME_DEVELOPMENT`: IAM role ARN for development environment
+- `AWS_ROLE_TO_ASSUME_STAGING`: IAM role ARN for staging environment
+- `AWS_ROLE_TO_ASSUME_PRODUCTION`: IAM role ARN for production environment
 - `AWS_REGION`: AWS region for deployments
 
 ## Conventional Commits
