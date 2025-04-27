@@ -276,65 +276,65 @@ create_iam_roles() {
   echo -e "${GREEN}Role GitHubActionsDevelopment updated successfully.${NC}" 
 
   # Create or update role for pr/staging environments
-  if aws iam get-role --role-name GitHubActionsPRStaging &> /dev/null; then
-    echo -e "${BLUE}Role GitHubActionsPRStaging already exists. Updating...${NC}"
+  if aws iam get-role --role-name GitHubActionsStaging &> /dev/null; then
+    echo -e "${BLUE}Role GitHubActionsStaging already exists. Updating...${NC}"
     
     # Update trust policy
-    echo -e "${BLUE}Updating trust policy for GitHubActionsPRStaging...${NC}"
+    echo -e "${BLUE}Updating trust policy for GitHubActionsStaging...${NC}"
     aws iam update-assume-role-policy \
-      --role-name GitHubActionsPRStaging \
+      --role-name GitHubActionsStaging \
       --policy-document file://.aws-github-oidc/trust-policy-staging.json
     
-    PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPRStaging --query "Role.Arn" --output text)
+    PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsStaging --query "Role.Arn" --output text)
   else
-    echo -e "${BLUE}Creating new GitHubActionsPRStaging role...${NC}"
+    echo -e "${BLUE}Creating new GitHubActionsStaging role...${NC}"
     aws iam create-role \
-      --role-name GitHubActionsPRStaging \
+      --role-name GitHubActionsStaging \
       --assume-role-policy-document file://.aws-github-oidc/trust-policy-staging.json
     
-    PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsPRStaging --query "Role.Arn" --output text)
+    PREVIEW_STAGING_ROLE_ARN=$(aws iam get-role --role-name GitHubActionsStaging --query "Role.Arn" --output text)
   fi
   
   # Attach or update policies for pr/staging role (always do this to ensure latest permissions)
-  echo -e "${BLUE}Updating policies for GitHubActionsPRStaging role...${NC}"
+  echo -e "${BLUE}Updating policies for GitHubActionsStaging role...${NC}"
   
   # Attach managed policies (will not fail if already attached)
   aws iam attach-role-policy \
-    --role-name GitHubActionsPRStaging \
+    --role-name GitHubActionsStaging \
     --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
   
   aws iam attach-role-policy \
-    --role-name GitHubActionsPRStaging \
+    --role-name GitHubActionsStaging \
     --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
   
   aws iam attach-role-policy \
-    --role-name GitHubActionsPRStaging \
+    --role-name GitHubActionsStaging \
     --policy-arn arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
   
   aws iam attach-role-policy \
-    --role-name GitHubActionsPRStaging \
+    --role-name GitHubActionsStaging \
     --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess
   
   aws iam attach-role-policy \
-    --role-name GitHubActionsPRStaging \
+    --role-name GitHubActionsStaging \
     --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
   
   aws iam attach-role-policy \
-    --role-name GitHubActionsPRStaging \
+    --role-name GitHubActionsStaging \
     --policy-arn arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
   
   # Attach SSM permissions for CDK bootstrap version checking
   aws iam attach-role-policy \
-    --role-name GitHubActionsPRStaging \
+    --role-name GitHubActionsStaging \
     --policy-arn arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
   
   # Add CDK bootstrap permissions (always update to ensure latest)
   aws iam put-role-policy \
-    --role-name GitHubActionsPRStaging \
+    --role-name GitHubActionsStaging \
     --policy-name CDKBootstrapAccess \
     --policy-document file://.aws-github-oidc/cdk-bootstrap-policy.json
   
-  echo -e "${GREEN}Role GitHubActionsPRStaging updated successfully.${NC}"
+  echo -e "${GREEN}Role GitHubActionsStaging updated successfully.${NC}"
   
   # Create or update role for production environment
   if aws iam get-role --role-name GitHubActionsProduction &> /dev/null; then
@@ -413,12 +413,12 @@ bootstrap_cdk() {
   # Always update roles with CDK bootstrap permissions to ensure they have the latest
   echo -e "${BLUE}Ensuring CDK bootstrap permissions are up to date...${NC}"
   
-  if aws iam get-role --role-name GitHubActionsPRStaging &> /dev/null; then
+  if aws iam get-role --role-name GitHubActionsStaging &> /dev/null; then
     aws iam put-role-policy \
-      --role-name GitHubActionsPRStaging \
+      --role-name GitHubActionsStaging \
       --policy-name CDKBootstrapAccess \
       --policy-document file://.aws-github-oidc/cdk-bootstrap-policy.json
-    echo -e "${GREEN}Updated CDK bootstrap permissions for GitHubActionsPRStaging role.${NC}"
+    echo -e "${GREEN}Updated CDK bootstrap permissions for GitHubActionsStaging role.${NC}"
   fi
   
   if aws iam get-role --role-name GitHubActionsProduction &> /dev/null; then

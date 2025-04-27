@@ -82,7 +82,7 @@ Create a file named `trust-policy-production.json` with stricter conditions:
 ```bash
 # Create role for pr/staging environments
 aws iam create-role \
-  --role-name GitHubActionsPRStaging \
+  --role-name GitHubActionsStaging \
   --assume-role-policy-document file://trust-policy-pr-staging.json
 
 # Create role for production environment
@@ -96,23 +96,23 @@ aws iam create-role \
 ```bash
 # Attach policies to pr/staging role
 aws iam attach-role-policy \
-  --role-name GitHubActionsPRStaging \
+  --role-name GitHubActionsStaging \
   --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
 
 aws iam attach-role-policy \
-  --role-name GitHubActionsPRStaging \
+  --role-name GitHubActionsStaging \
   --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
 
 aws iam attach-role-policy \
-  --role-name GitHubActionsPRStaging \
+  --role-name GitHubActionsStaging \
   --policy-arn arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
 
 aws iam attach-role-policy \
-  --role-name GitHubActionsPRStaging \
+  --role-name GitHubActionsStaging \
   --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess
 
 aws iam attach-role-policy \
-  --role-name GitHubActionsPRStaging \
+  --role-name GitHubActionsStaging \
   --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
 
 # Attach policies to production role (same policies)
@@ -146,7 +146,7 @@ In your GitHub repository, add the following secrets:
 1. Go to your repository → Settings → Secrets and variables → Actions
 2. Add the following repository secrets:
 
-- `AWS_ROLE_TO_ASSUME`: `arn:aws:iam::<ACCOUNT_ID>:role/GitHubActionsPRStaging`
+- `AWS_ROLE_TO_ASSUME`: `arn:aws:iam::<ACCOUNT_ID>:role/GitHubActionsStaging`
 - `AWS_ROLE_TO_ASSUME_PROD`: `arn:aws:iam::<ACCOUNT_ID>:role/GitHubActionsProduction`
 - `AWS_REGION`: Your AWS region (e.g., `eu-central-1`)
 

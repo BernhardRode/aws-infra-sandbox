@@ -1,0 +1,69 @@
+name: Comment Triggered Deployment
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy-on-comment:
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '/deploy-preview') }}
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Get PR details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            return { ref: pr.head.ref, number: pr.number };
+      
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ fromJSON(steps.pr.outputs.result).ref }}
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_DEVELOPMENT }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Install CDK
+        run: npm install -g aws-cdk
+      
+      - name: Deploy PR Preview
+        id: deploy
+        run: |
+          PR_NUMBER=${{ fromJSON(steps.pr.outputs.result).number }}
+          echo "Deploying preview environment for PR #${PR_NUMBER}"
+          make preview-deploy PR_NUMBER=${PR_NUMBER}
+      
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const body = `## 🚀 Preview Environment Deployed
+
+            Preview environment has been deployed for PR #${{ fromJSON(steps.pr.outputs.result).number }}
+            
+            This environment will be automatically destroyed when the PR is closed.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
