@@ -25,3 +25,7 @@ build/cdk.out/
 # Ensure no build artifacts are committed
 build/
 infra/aws-infra-sandbox
+
+# Ignore the following files and directories
+# AWS policies
+.aws-github-oidc

@@ -137,7 +137,31 @@ create_trust_policies() {
   # Create directory for policies if it doesn't exist
   mkdir -p .aws-github-oidc
   
-  # Create trust policy for pr/staging
+  # Create trust policy for development
+  cat > .aws-github-oidc/trust-policy-development.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:*"
+        }
+      }
+    }
+  ]
+}
+EOF
+  
+  # Create trust policy for staging
   cat > .aws-github-oidc/trust-policy-staging.json << EOF
 {
   "Version": "2012-10-17",
