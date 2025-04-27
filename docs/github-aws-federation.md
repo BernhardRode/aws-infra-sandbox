@@ -23,16 +23,28 @@ Instead of storing long-lived AWS credentials as GitHub secrets, we use AWS IAM 
 We use three separate IAM roles for different environments:
 
 1. **GitHubActionsDevelopment**: Used for development and PR environments
-   - Trust policy allows any workflow in the repository
-   - Used for PR preview environments and local development
+   - Trust policy allows only pull requests and specific branch patterns
+   - Used for PR preview environments and feature branch development
 
 2. **GitHubActionsStaging**: Used for staging environment
-   - Trust policy allows workflows from the main branch
+   - Trust policy allows only workflows from the main branch
    - Used for deployments to the staging environment
 
 3. **GitHubActionsProduction**: Used for production environment
-   - Trust policy only allows workflows triggered by tags
+   - Trust policy only allows workflows triggered by version tags (v*)
    - Used for production releases
+
+## Least Privilege Permissions
+
+Each role has a custom policy that follows the principle of least privilege:
+
+- Only specific CloudFormation actions needed for deployments
+- S3 access limited to CDK-related buckets
+- Lambda permissions limited to function management
+- API Gateway permissions for REST API management
+- CloudWatch Logs permissions for log management
+- IAM permissions limited to CDK-created roles
+- SSM permissions limited to CDK bootstrap parameters
 
 ## GitHub Secrets
 
@@ -59,7 +71,7 @@ This script:
 
 1. Creates or updates the OIDC provider for GitHub Actions
 2. Creates IAM roles with appropriate trust policies
-3. Attaches necessary permissions to the roles
+3. Attaches least privilege permissions to the roles
 4. Sets up GitHub repository secrets
 
 ## Trust Policies
@@ -81,7 +93,12 @@ This script:
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:OWNER/REPO:*"
+          "token.actions.githubusercontent.com:sub": [
+            "repo:OWNER/REPO:pull_request",
+            "repo:OWNER/REPO:ref:refs/heads/feature/*",
+            "repo:OWNER/REPO:ref:refs/heads/bugfix/*",
+            "repo:OWNER/REPO:ref:refs/heads/dev/*"
+          ]
         }
       }
     }
@@ -106,10 +123,7 @@ This script:
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": [
-            "repo:OWNER/REPO:ref:refs/heads/main",
-            "repo:OWNER/REPO:pull_request"
-          ]
+          "token.actions.githubusercontent.com:sub": "repo:OWNER/REPO:ref:refs/heads/main"
         }
       }
     }
@@ -134,7 +148,7 @@ This script:
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:OWNER/REPO:ref:refs/tags/*"
+          "token.actions.githubusercontent.com:sub": "repo:OWNER/REPO:ref:refs/tags/v*"
         }
       }
     }

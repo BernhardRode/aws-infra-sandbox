@@ -146,7 +146,12 @@ create_trust_policies() {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:*"
+          "token.actions.githubusercontent.com:sub": [
+            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:pull_request",
+            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/feature/*",
+            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/bugfix/*",
+            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/dev/*"
+          ]
         }
       }
     }
@@ -170,10 +175,7 @@ EOF
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": [
-            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/main",
-            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:pull_request"
-          ]
+          "token.actions.githubusercontent.com:sub": "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/main"
         }
       }
     }
@@ -197,7 +199,7 @@ EOF
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/tags/*"
+          "token.actions.githubusercontent.com:sub": "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/tags/v*"
         }
       }
     }
@@ -238,41 +240,125 @@ attach_common_policies() {
   
   echo -e "${BLUE}Attaching common policies to ${role_name}...${NC}"
   
-  # Attach managed policies (will not fail if already attached)
-  aws iam attach-role-policy \
-    --role-name ${role_name} \
-    --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
-  
-  aws iam attach-role-policy \
-    --role-name ${role_name} \
-    --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-  
-  aws iam attach-role-policy \
-    --role-name ${role_name} \
-    --policy-arn arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
-  
-  aws iam attach-role-policy \
-    --role-name ${role_name} \
-    --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess
-  
-  aws iam attach-role-policy \
-    --role-name ${role_name} \
-    --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-  
-  aws iam attach-role-policy \
-    --role-name ${role_name} \
-    --policy-arn arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
-  
-  # Attach SSM permissions for CDK bootstrap version checking
-  aws iam attach-role-policy \
-    --role-name ${role_name} \
-    --policy-arn arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
-  
-  # Add CDK bootstrap permissions (always update to ensure latest)
+  # Create a custom policy for the role with least privilege
+  cat > .aws-github-oidc/policy-${role_name}.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:CreateStack",
+        "cloudformation:DeleteStack",
+        "cloudformation:DescribeStacks",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:DescribeStackResources",
+        "cloudformation:GetTemplate",
+        "cloudformation:ValidateTemplate",
+        "cloudformation:UpdateStack",
+        "cloudformation:ListStacks"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:DeleteBucket",
+        "s3:ListBucket",
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:PutBucketPolicy",
+        "s3:GetBucketPolicy"
+      ],
+      "Resource": [
+        "arn:aws:s3:::cdk-*",
+        "arn:aws:s3:::cdk-*/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:CreateFunction",
+        "lambda:DeleteFunction",
+        "lambda:GetFunction",
+        "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:AddPermission",
+        "lambda:RemovePermission",
+        "lambda:InvokeFunction",
+        "lambda:GetPolicy"
+      ],
+      "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "apigateway:GET",
+        "apigateway:POST",
+        "apigateway:PUT",
+        "apigateway:DELETE",
+        "apigateway:PATCH"
+      ],
+      "Resource": [
+        "arn:aws:apigateway:${AWS_REGION}::/restapis",
+        "arn:aws:apigateway:${AWS_REGION}::/restapis/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DeleteLogGroup"
+      ],
+      "Resource": "arn:aws:logs:${AWS_REGION}:${AWS_ACCOUNT_ID}:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:PassRole",
+        "iam:GetRole",
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:PutRolePolicy",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy"
+      ],
+      "Resource": [
+        "arn:aws:iam::${AWS_ACCOUNT_ID}:role/cdk-*",
+        "arn:aws:iam::${AWS_ACCOUNT_ID}:role/*-lambda-role"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter"
+      ],
+      "Resource": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/cdk-bootstrap/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": [
+        "arn:aws:iam::${AWS_ACCOUNT_ID}:role/cdk-*"
+      ]
+    }
+  ]
+}
+EOF
+
+  # Create the policy in IAM
   aws iam put-role-policy \
     --role-name ${role_name} \
-    --policy-name CDKBootstrapAccess \
-    --policy-document file://.aws-github-oidc/cdk-bootstrap-policy.json
+    --policy-name CDKDeploymentPolicy \
+    --policy-document file://.aws-github-oidc/policy-${role_name}.json
+  
+  echo -e "${GREEN}Custom policy attached to ${role_name}.${NC}"
+}
 }
 
 # Create or update IAM role
