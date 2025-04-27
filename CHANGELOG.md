@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.2.0...v1.3.0) (2025-04-27)
+
+
+### Features
+
+* remove the policies ([acc8359](https://github.com/BernhardRode/aws-infra-sandbox/commit/acc835972b9347bde9b3760e47e6c2aaa6038dc6))
+
+
+### Bug Fixes
+
+* refactor the setup script ([0dfd4f2](https://github.com/BernhardRode/aws-infra-sandbox/commit/0dfd4f2b91fdaede7a7c28a1f3cf8379c5777302))
+
 ## [1.2.0](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.1.0...v1.2.0) (2025-04-26)
 
 
