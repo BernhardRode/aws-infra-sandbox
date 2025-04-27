@@ -17,6 +17,7 @@ GITHUB_REPO_NAME=""
 DEVELOPMENT_ROLE_ARN=""
 STAGING_ROLE_ARN=""
 PRODUCTION_ROLE_ARN=""
+POLICY_DIR=".aws-github-oidc"
 
 # Check if required tools are installed
 check_requirements() {
@@ -123,92 +124,60 @@ create_oidc_provider() {
   fi
 }
 
-# Create trust policy files
+# Create a trust policy file
+create_trust_policy() {
+  local policy_name=$1
+  local conditions=$2
+  
+  echo -e "${BLUE}Creating trust policy: ${policy_name}...${NC}"
+  
+  cat > "${POLICY_DIR}/${policy_name}.json" << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": ${conditions}
+        }
+      }
+    }
+  ]
+}
+EOF
+}
+
+# Create all trust policies
 create_trust_policies() {
   echo -e "${BLUE}Creating trust policy files...${NC}"
   
   # Create directory for policies if it doesn't exist
-  mkdir -p .aws-github-oidc
+  mkdir -p ${POLICY_DIR}
   
-  # Create trust policy for development/staging
-  cat > .aws-github-oidc/trust-policy-development.json << EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": [
-            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:pull_request",
-            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/feature/*",
-            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/bugfix/*",
-            "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/dev/*"
-          ]
-        }
-      }
-    }
-  ]
-}
-EOF
-
-  # Create trust policy for staging (branch-specific)
-  cat > .aws-github-oidc/trust-policy-staging.json << EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/main"
-        }
-      }
-    }
-  ]
-}
-EOF
+  # Development trust policy
+  create_trust_policy "trust-policy-development" '[
+    "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:pull_request",
+    "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/feature/*",
+    "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/bugfix/*",
+    "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/dev/*"
+  ]'
   
-  # Create trust policy for production (more restrictive)
-  cat > .aws-github-oidc/trust-policy-production.json << EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/tags/v*"
-        }
-      }
-    }
-  ]
-}
-EOF
+  # Staging trust policy
+  create_trust_policy "trust-policy-staging" '"repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/heads/main"'
+  
+  # Production trust policy
+  create_trust_policy "trust-policy-production" '"repo:${GITHUB_OWNER}/${GITHUB_REPO_NAME}:ref:refs/tags/v*"'
 
   # Create CDK bootstrap policy
-  cat > .aws-github-oidc/cdk-bootstrap-policy.json << EOF
+  cat > ${POLICY_DIR}/cdk-bootstrap-policy.json << EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -231,17 +200,16 @@ EOF
 }
 EOF
   
-  echo -e "${GREEN}Trust policy files created in .aws-github-oidc/ directory.${NC}"
+  echo -e "${GREEN}Trust policy files created in ${POLICY_DIR}/ directory.${NC}"
 }
 
-# Attach common policies to a role
-attach_common_policies() {
+# Create a deployment policy
+create_deployment_policy() {
   local role_name=$1
   
-  echo -e "${BLUE}Attaching common policies to ${role_name}...${NC}"
+  echo -e "${BLUE}Creating deployment policy for ${role_name}...${NC}"
   
-  # Create a custom policy for the role with least privilege
-  cat > .aws-github-oidc/policy-${role_name}.json << EOF
+  cat > ${POLICY_DIR}/policy-${role_name}.json << EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -351,14 +319,25 @@ attach_common_policies() {
 }
 EOF
 
-  # Create the policy in IAM
+  return 0
+}
+
+# Attach policies to a role
+attach_policies_to_role() {
+  local role_name=$1
+  
+  echo -e "${BLUE}Attaching policies to ${role_name}...${NC}"
+  
+  # Create the deployment policy
+  create_deployment_policy ${role_name}
+  
+  # Attach the policy to the role
   aws iam put-role-policy \
     --role-name ${role_name} \
     --policy-name CDKDeploymentPolicy \
-    --policy-document file://.aws-github-oidc/policy-${role_name}.json
+    --policy-document file://${POLICY_DIR}/policy-${role_name}.json
   
-  echo -e "${GREEN}Custom policy attached to ${role_name}.${NC}"
-}
+  echo -e "${GREEN}Policies attached to ${role_name}.${NC}"
 }
 
 # Create or update IAM role
@@ -369,6 +348,8 @@ create_or_update_role() {
   
   echo -e "${BLUE}Creating or updating IAM role: ${role_name}...${NC}"
   
+  local role_arn=""
+  
   if aws iam get-role --role-name ${role_name} &> /dev/null; then
     echo -e "${BLUE}Role ${role_name} already exists. Updating...${NC}"
     
@@ -378,7 +359,7 @@ create_or_update_role() {
       --role-name ${role_name} \
       --policy-document file://${policy_file}
     
-    local role_arn=$(aws iam get-role --role-name ${role_name} --query "Role.Arn" --output text)
+    role_arn=$(aws iam get-role --role-name ${role_name} --query "Role.Arn" --output text)
   else
     echo -e "${BLUE}Creating new ${role_name} role...${NC}"
     aws iam create-role \
@@ -386,11 +367,11 @@ create_or_update_role() {
       --description "${description}" \
       --assume-role-policy-document file://${policy_file}
     
-    local role_arn=$(aws iam get-role --role-name ${role_name} --query "Role.Arn" --output text)
+    role_arn=$(aws iam get-role --role-name ${role_name} --query "Role.Arn" --output text)
   fi
   
-  # Attach common policies
-  attach_common_policies ${role_name}
+  # Attach policies
+  attach_policies_to_role ${role_name}
   
   echo -e "${GREEN}Role ${role_name} updated successfully.${NC}"
   
@@ -404,17 +385,17 @@ create_iam_roles() {
   
   # Create or update role for development environment
   DEVELOPMENT_ROLE_ARN=$(create_or_update_role "GitHubActionsDevelopment" \
-    ".aws-github-oidc/trust-policy-development.json" \
+    "${POLICY_DIR}/trust-policy-development.json" \
     "Role for GitHub Actions development environment")
   
   # Create or update role for staging environment
   STAGING_ROLE_ARN=$(create_or_update_role "GitHubActionsStaging" \
-    ".aws-github-oidc/trust-policy-staging.json" \
+    "${POLICY_DIR}/trust-policy-staging.json" \
     "Role for GitHub Actions staging environment")
   
   # Create or update role for production environment
   PRODUCTION_ROLE_ARN=$(create_or_update_role "GitHubActionsProduction" \
-    ".aws-github-oidc/trust-policy-production.json" \
+    "${POLICY_DIR}/trust-policy-production.json" \
     "Role for GitHub Actions production environment")
   
   echo -e "${GREEN}All IAM roles created or updated successfully.${NC}"
@@ -460,6 +441,16 @@ setup_github_secrets() {
   fi
 }
 
+# Clean up temporary files
+cleanup() {
+  echo -e "${BLUE}Cleaning up temporary files...${NC}"
+  
+  # Uncomment if you want to remove the policy files after setup
+  # rm -rf ${POLICY_DIR}
+  
+  echo -e "${GREEN}Cleanup complete.${NC}"
+}
+
 # Main function
 main() {
   echo -e "${BLUE}Setting up GitHub Actions with AWS IAM Identity Federation...${NC}"
@@ -472,6 +463,7 @@ main() {
   create_trust_policies
   create_iam_roles
   setup_github_secrets
+  # cleanup  # Uncomment if you want to clean up temporary files
   
   echo -e "${GREEN}Setup completed successfully!${NC}"
   echo -e "${GREEN}Your GitHub Actions workflows are now ready to use AWS IAM Identity Federation.${NC}"
