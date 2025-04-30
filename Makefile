@@ -55,19 +55,14 @@ clean:
 lambdas: $(BIN_DIR) $(DIST_DIR)
 	@echo "Building Lambda functions..."
 	@for func in $(FUNCTION_NAMES); do \
-		echo "Building Lambda function: $$func"; \
-		cd $(FUNCTIONS_DIR)/$$func && \
-		if [ ! -f "go.mod" ]; then \
-			go mod init $(FUNCTIONS_DIR)/$$func; \
-			go mod tidy; \
-		fi && \
-		GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go build -o $(CURDIR)/$(BIN_DIR)/$$func && \
-		cd $(CURDIR)/$(BIN_DIR) && \
-		cp $$func bootstrap && \
-		chmod 755 bootstrap && \
-		zip -j $(CURDIR)/$(DIST_DIR)/$$func.zip bootstrap && \
-		rm bootstrap && \
-		echo "Lambda build complete: $$func"; \
+		if [ -d "$(FUNCTIONS_DIR)/$$func" ]; then \
+			echo "Building Lambda function: $$func"; \
+			mkdir -p $(DIST_DIR)/$$func; \
+			(cd $(FUNCTIONS_DIR)/$$func && GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) go build -tags lambda.norpc -o $(CURDIR)/$(DIST_DIR)/$$func/bootstrap main.go); \
+			(cd $(DIST_DIR)/$$func && zip -j ../$$func.zip bootstrap); \
+			rm -rf $(DIST_DIR)/$$func; \
+			echo "Lambda build complete: $$func"; \
+		fi; \
 	done
 	@echo "All Lambda functions built"
 

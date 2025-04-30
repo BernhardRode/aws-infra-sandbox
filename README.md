@@ -151,3 +151,65 @@ For more detailed documentation, see the [docs](./docs) directory:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+## Vaultwarden on ECS Fargate
+
+This project now includes a Vaultwarden password manager deployment on AWS ECS Fargate. The implementation:
+
+- Creates a dedicated VPC with public and private subnets
+- Sets up VPC endpoints for secure access to AWS services without internet gateways
+- Deploys an ECS Fargate cluster with the Vaultwarden container
+- Uses EFS for persistent storage of Vaultwarden data
+- Provides an Application Load Balancer for public access
+- Supports optional HTTPS with automatic certificate provisioning
+
+### Configuration
+
+You can configure the Vaultwarden deployment by modifying the `vaultwardenConfig` object in the main file (`infra/aws-infra-sandbox.go`):
+
+```go
+vaultwardenConfig := &vaultwarden.VaultwardenConfig{
+    // Base configuration
+    BaseImageName: "vaultwarden/server",
+    BaseVersion:   "latest",
+    DomainName:    "", // Set via VAULTWARDEN_DOMAIN_NAME env var or leave empty for HTTP
+    
+    // VPC configuration
+    VpcCidr:  "20.0.0.0/24",
+    MaxAzs:   2,
+    
+    // ECS configuration
+    ClusterName:  "vaultwarden-cluster",
+    DesiredCount: 1,
+    Cpu:          256, // 0.25 vCPU
+    MemoryMiB:    512, // 512 MB RAM
+    
+    // EFS configuration
+    FileSystemName:           "vaultwarden-fs",
+    EnableAutomaticBackups:   true,
+    LifecyclePolicyDays:      14,
+    OutOfInfrequentAccessHits: 1,
+}
+```
+
+You can also override some settings using environment variables:
+
+- `VAULTWARDEN_BASE_VERSION`: The version of the Vaultwarden image to use (defaults to "latest")
+- `VAULTWARDEN_DOMAIN_NAME`: Optional domain name for HTTPS access
+- `VAULTWARDEN_CONFIG_*`: Any environment variables prefixed with `VAULTWARDEN_CONFIG_` will be passed to the container
+
+### Deployment
+
+To deploy the Vaultwarden stack:
+
+```bash
+# Development environment
+make dev-deploy
+
+# Staging environment
+make deploy ENVIRONMENT=staging
+
+# Production environment
+make deploy ENVIRONMENT=production
+```
+
+When providing a domain name, the deployment will create an SSL certificate and wait for DNS validation before completing.

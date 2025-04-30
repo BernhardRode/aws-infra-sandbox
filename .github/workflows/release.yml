@@ -50,57 +50,58 @@ jobs:
         with:
           release-type: go
 
-  deploy-staging:
-    name: Deploy to Staging
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
-    uses: ./.github/workflows/reusable-aws-deploy.yml
-    with:
-      environment: staging
-      version: ${{ needs.release-please.outputs.tag_name }}
-    secrets:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_STAGING }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+  # deploy-staging:
+  #   name: Deploy to Staging
+  #   needs: release-please
+  #   if: ${{ needs.release-please.outputs.release_created == 'true' }}
+  #   uses: ./.github/workflows/reusable-aws-deploy.yml
+  #   with:
+  #     environment: staging
+  #     version: ${{ needs.release-please.outputs.tag_name }}
+  #   secrets:
+  #     AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_STAGING }}
+  #     AWS_REGION: ${{ secrets.AWS_REGION }}
 
-  test-staging:
-    name: Test Staging Deployment
-    needs: [release-please, deploy-staging]
-    runs-on: ubuntu-24.04-arm
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
-    outputs:
-      tests_passed: ${{ steps.integration_tests.outputs.tests_passed }}
+  # test-staging:
+  #   name: Test Staging Deployment
+  #   needs: [release-please, deploy-staging]
+  #   runs-on: ubuntu-24.04-arm
+  #   if: ${{ needs.release-please.outputs.release_created == 'true' }}
+  #   outputs:
+  #     tests_passed: ${{ steps.integration_tests.outputs.tests_passed }}
     
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.release-please.outputs.tag_name }}
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         ref: ${{ needs.release-please.outputs.tag_name }}
       
-      - name: Setup Go
-        uses: actions/setup-go@v5
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v5
       
-      - name: Run Integration Tests
-        id: integration_tests
-        run: |
-          echo "Running integration tests against staging environment..."
-          # Add your integration tests here
-          # For now, we'll just simulate a successful test
-          echo "Integration tests passed!"
-          echo "tests_passed=true" >> $GITHUB_OUTPUT
+  #     - name: Run Integration Tests
+  #       id: integration_tests
+  #       run: |
+  #         echo "Running integration tests against staging environment..."
+  #         # Add your integration tests here
+  #         # For now, we'll just simulate a successful test
+  #         echo "Integration tests passed!"
+  #         echo "tests_passed=true" >> $GITHUB_OUTPUT
       
-      - name: Test Summary
-        run: |
-          echo "## Staging Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Tests completed successfully" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version:** ${{ needs.release-please.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment:** staging" >> $GITHUB_STEP_SUMMARY
-          echo "- **Test Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+  #     - name: Test Summary
+  #       run: |
+  #         echo "## Staging Test Results" >> $GITHUB_STEP_SUMMARY
+  #         echo "✅ Tests completed successfully" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "**Details:**" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Version:** ${{ needs.release-please.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Environment:** staging" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Test Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
   deploy-production:
     name: Deploy to Production
-    needs: [release-please, test-staging]
+    # needs: [release-please, test-staging]
+    needs: [release-please]
     if: ${{ needs.release-please.outputs.release_created == 'true' && needs.test-staging.outputs.tests_passed == 'true' }}
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:

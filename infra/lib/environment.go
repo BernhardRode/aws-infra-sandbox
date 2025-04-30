@@ -58,6 +58,27 @@ func (e *Environment) GetStackName(suffix string) string {
 	return firstChar + "-" + kebabCase(suffix)
 }
 
+// GetEnvPrefix returns the environment-specific prefix for domain names
+func (e *Environment) GetEnvPrefix() string {
+	if e.Name == "pr" {
+		return "pr-" + e.PRNumber
+	}
+	if e.Name == "development" {
+		username := e.Username
+		if username == "" {
+			username = getCurrentUsername()
+		}
+		return "d-" + username
+	}
+	if e.Name == "staging" {
+		return "staging"
+	}
+	if e.Name == "production" {
+		return "production"
+	}
+	return "unknown"
+}
+
 // GetEnvironmentFromContext extracts environment information from CDK context
 func GetEnvironmentFromContext(app awscdk.App) Environment {
 	env := Environment{

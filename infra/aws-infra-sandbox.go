@@ -1,111 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/aws/aws-cdk-go/awscdk/v2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awss3assets"
-	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 
 	"aws-infra-sandbox/lib"
+	"aws-infra-sandbox/stacks/core"
+	"aws-infra-sandbox/stacks/lambda"
+	"aws-infra-sandbox/stacks/vaultwarden"
 )
-
-type StackProps struct {
-	awscdk.StackProps
-	Environment lib.Environment
-}
-
-func CoreStack(scope constructs.Construct, id string, props *StackProps) awscdk.Stack {
-	var sprops awscdk.StackProps
-	if props != nil {
-		sprops = props.StackProps
-	}
-	stack := awscdk.NewStack(scope, &id, &sprops)
-
-	// Add environment tags to all resources
-	awscdk.NewCfnOutput(stack, jsii.String("Username"), &awscdk.CfnOutputProps{
-		Value: jsii.String(props.Environment.Username),
-	})
-
-	// Safely retrieve and output the domain name servers
-	// nameServers := zone.HostedZoneNameServers()
-	// if nameServers != nil {
-	// 	for i, ns := range *nameServers {
-	// 		awscdk.NewCfnOutput(stack, jsii.String(fmt.Sprintf("ns-%d", i+1)), &awscdk.CfnOutputProps{
-	// 			Value: ns,
-	// 		})
-	// 	}
-	// } else {
-	// 	fmt.Println("Warning: No name servers available for the hosted zone")
-	// }
-
-	return stack
-}
-
-func LambdaStack(scope constructs.Construct, id string, props *StackProps) awscdk.Stack {
-	var sprops awscdk.StackProps
-	if props != nil {
-		sprops = props.StackProps
-	}
-	stack := awscdk.NewStack(scope, &id, &sprops)
-
-	// iterate over all folders in functions and create lambdas
-	// read the folders from functions folder, from the filesystem and operating system
-	folders, err := readFolders("./functions")
-	if err != nil {
-		fmt.Println("Error reading folders:", err)
-		return nil
-	}
-
-	for _, folder := range folders {
-		apiName := props.Environment.GetStackName(folder) + folder
-
-		// Create the Lambda function
-		lambdaFn := awslambda.NewFunction(stack, jsii.String(apiName), &awslambda.FunctionProps{
-			Code:         awslambda.Code_FromAsset(jsii.String("build/dist/"+folder+".zip"), &awss3assets.AssetOptions{}),
-			Timeout:      awscdk.Duration_Seconds(jsii.Number(300)),
-			Runtime:      awslambda.Runtime_PROVIDED_AL2023(),
-			Architecture: awslambda.Architecture_ARM_64(),
-			Handler:      jsii.String("bootstrap"), // Must be "bootstrap" for provided.al2023
-		})
-
-		// Create API Gateway with Lambda integration
-		api := awsapigateway.NewLambdaRestApi(stack, jsii.String(folder+"Endpoint"), &awsapigateway.LambdaRestApiProps{
-			Handler:     lambdaFn,
-			RestApiName: jsii.String(apiName),
-		})
-
-		// Add API URL as stack output
-		awscdk.NewCfnOutput(stack, jsii.String(folder+"ApiUrl"), &awscdk.CfnOutputProps{
-			Value: api.Url(),
-		})
-	}
-
-	return stack
-}
-
-func readFolders(path string) ([]string, error) {
-	var folders []string
-
-	// Read the directory
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, fmt.Errorf("error reading directory: %w", err)
-	}
-
-	// Iterate through entries and add folder names
-	for _, entry := range entries {
-		if entry.IsDir() {
-			folders = append(folders, entry.Name())
-		}
-	}
-
-	return folders, nil
-}
 
 func main() {
 	defer jsii.Close()
@@ -130,24 +33,75 @@ func main() {
 	// Create stacks with environment-specific names
 	coreStackName := environment.GetStackName("CoreStack")
 	lambdaStackName := environment.GetStackName("LambdaStack")
+	vaultwardenStackName := environment.GetStackName("VaultwardenStack")
 
-	// Create props with environment information
-	props := &StackProps{
+	// Configure domain for all stacks
+	domainConfig := &lib.DomainConfig{
+		RootDomain:   "ebbo.dev",
+		HostedZoneId: "Z02287733RP9AY57D3IRQ",
+	}
+
+	// Create props for each stack with environment information
+	coreProps := &core.CoreStackProps{
 		StackProps: awscdk.StackProps{
 			Env: env(),
 		},
-		Environment: environment,
+		Environment:  environment,
+		DomainConfig: domainConfig,
 	}
 
-	CoreStack(app, coreStackName, props)
-	stack := LambdaStack(app, lambdaStackName, props)
+	lambdaProps := &lambda.LambdaStackProps{
+		StackProps: awscdk.StackProps{
+			Env: env(),
+		},
+		Environment:  environment,
+		DomainConfig: domainConfig,
+	}
+
+	// Configure Vaultwarden stack
+	vaultwardenConfig := &vaultwarden.VaultwardenConfig{
+		// Base configuration
+		BaseImageName: "vaultwarden/server",
+		BaseVersion:   "latest",
+		DomainName:    "", // Will be auto-generated as vault.<env>.ebbo.dev
+
+		// VPC configuration
+		VpcCidr: "20.0.0.0/24",
+		MaxAzs:  2,
+
+		// ECS configuration
+		ClusterName:  environment.GetStackName("vaultwarden-cluster"),
+		DesiredCount: 1,
+		Cpu:          256, // 0.25 vCPU
+		MemoryMiB:    512, // 512 MB RAM
+
+		// EFS configuration
+		FileSystemName:            environment.GetStackName("vaultwarden-fs"),
+		EnableAutomaticBackups:    true,
+		LifecyclePolicyDays:       14,
+		OutOfInfrequentAccessHits: 1,
+	}
+
+	vaultwardenProps := &vaultwarden.VaultwardenStackProps{
+		StackProps: awscdk.StackProps{
+			Env: env(),
+		},
+		Environment:  environment,
+		Config:       vaultwardenConfig,
+		DomainConfig: domainConfig,
+	}
+
+	// Create the stacks
+	core.NewCoreStack(app, coreStackName, coreProps)
+	lambdaStack := lambda.NewLambdaStack(app, lambdaStackName, lambdaProps)
+	vaultwarden.NewVaultwardenStack(app, vaultwardenStackName, vaultwardenProps)
 
 	// Add stack outputs for PR environments
 	if environment.IsPR {
-		awscdk.NewCfnOutput(stack, jsii.String("EnvironmentType"), &awscdk.CfnOutputProps{
+		awscdk.NewCfnOutput(lambdaStack, jsii.String("EnvironmentType"), &awscdk.CfnOutputProps{
 			Value: jsii.String("PR"),
 		})
-		awscdk.NewCfnOutput(stack, jsii.String("PRNumber"), &awscdk.CfnOutputProps{
+		awscdk.NewCfnOutput(lambdaStack, jsii.String("PRNumber"), &awscdk.CfnOutputProps{
 			Value: jsii.String(environment.PRNumber),
 		})
 	}
@@ -158,26 +112,7 @@ func main() {
 // env determines the AWS environment (account+region) in which our stack is to
 // be deployed. For more information see: https://docs.aws.amazon.com/cdk/latest/guide/environments.html
 func env() *awscdk.Environment {
-	// If unspecified, this stack will be "environment-agnostic".
-	// Account/Region-dependent features and context lookups will not work, but a
-	// single synthesized template can be deployed anywhere.
-	//---------------------------------------------------------------------------
+	// For development, we'll use environment-agnostic stacks
+	// The actual account and region will be provided by the CDK CLI during deployment
 	return nil
-
-	// Uncomment if you know exactly what account and region you want to deploy
-	// the stack to. This is the recommendation for production stacks.
-	//---------------------------------------------------------------------------
-	// return &awscdk.Environment{
-	//  Account: jsii.String("123456789012"),
-	//  Region:  jsii.String("us-east-1"),
-	// }
-
-	// Uncomment to specialize this stack for the AWS Account and Region that are
-	// implied by the current CLI configuration. This is recommended for dev
-	// stacks.
-	//---------------------------------------------------------------------------
-	// return &awscdk.Environment{
-	//  Account: jsii.String(os.Getenv("CDK_DEFAULT_ACCOUNT")),
-	//  Region:  jsii.String(os.Getenv("CDK_DEFAULT_REGION")),
-	// }
 }
