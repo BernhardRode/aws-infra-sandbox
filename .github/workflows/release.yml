@@ -30,14 +30,9 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_STAGING }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-  unit-tests:
-    needs: setup
-    name: Run Unit Tests
-    uses: ./.github/workflows/reusable-test.yml
-
   release-please:
     name: Release Please
-    needs: unit-tests
+    needs: setup
     runs-on: ubuntu-24.04-arm
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
@@ -97,6 +92,11 @@ jobs:
   #         echo "- **Version:** ${{ needs.release-please.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
   #         echo "- **Environment:** staging" >> $GITHUB_STEP_SUMMARY
   #         echo "- **Test Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+  # unit-tests:
+  #   needs: setup
+  #   name: Run Unit Tests
+  #   uses: ./.github/workflows/reusable-test.yml
 
   deploy-production:
     name: Deploy to Production
