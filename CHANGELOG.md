@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.4.0...v1.4.1) (2025-04-30)
+
+
+### Bug Fixes
+
+* build ([0062691](https://github.com/BernhardRode/aws-infra-sandbox/commit/0062691e0a61a0a180273dffba7401eecb781d69))
+
 ## [1.4.0](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.3.0...v1.4.0) (2025-04-30)
 
 
