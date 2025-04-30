@@ -1,6 +1,8 @@
 package vaultwarden
 
 import (
+	"aws-infra-sandbox/lib"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsecr"
 	"github.com/aws/constructs-go/constructs/v10"
@@ -18,13 +20,11 @@ type ImageRepository struct {
 	Repository awsecr.Repository
 }
 
-func NewImageRepository(scope constructs.Construct, id string, props *ImageRepositoryProps) *ImageRepository {
+func NewImageRepository(scope constructs.Construct, id string, props *ImageRepositoryProps, Environment lib.Environment) *ImageRepository {
 	construct := constructs.NewConstruct(scope, &id)
 
-	environment := GetEnvironmentFromContext(scope)
-
 	// Create an ECR repository to store the Vaultwarden image
-	repoName := environment.GetStackName("VaultwardenImageRepository")
+	repoName := Environment.GetStackName("VaultwardenImageRepository")
 	repository := awsecr.NewRepository(construct, jsii.String(repoName), &awsecr.RepositoryProps{
 		RepositoryName: jsii.String(props.ImageName),
 	})
