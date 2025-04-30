@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.3.0...v1.4.0) (2025-04-30)
+
+
+### Features
+
+* remove staging, refactor and add vaultwarden ([f18138e](https://github.com/BernhardRode/aws-infra-sandbox/commit/f18138e6c1e07381db5a9185e3e7704fbe4a840e))
+
 ## [1.3.0](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.2.0...v1.3.0) (2025-04-27)
 
 
