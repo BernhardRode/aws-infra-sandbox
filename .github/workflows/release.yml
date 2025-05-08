@@ -45,6 +45,18 @@ jobs:
         with:
           release-type: go
 
+  deploy-development:
+    name: Deploy to Development
+    # needs: [release-please, test-staging]
+    needs: [release-please]
+    uses: ./.github/workflows/reusable-aws-deploy.yml
+    with:
+      environment: development
+      version: ${{ github.sha }}
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME_PRODUCTION }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
   # deploy-staging:
   #   name: Deploy to Staging
   #   needs: release-please
@@ -101,7 +113,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     # needs: [release-please, test-staging]
-    needs: [release-please]
+    needs: [release-please, deploy-development]
     if: ${{ needs.release-please.outputs.release_created == 'true' && needs.test-staging.outputs.tests_passed == 'true' }}
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
