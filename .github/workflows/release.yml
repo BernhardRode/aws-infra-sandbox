@@ -49,6 +49,7 @@ jobs:
     name: Deploy to Development
     # needs: [release-please, test-staging]
     needs: [release-please]
+    if: ${{ needs.release-please.outputs.release_created == 'false' }}
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: development
@@ -113,8 +114,8 @@ jobs:
   deploy-production:
     name: Deploy to Production
     # needs: [release-please, test-staging]
-    needs: [release-please, deploy-development]
-    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.test-staging.outputs.tests_passed == 'true' }}
+    needs: [release-please]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     uses: ./.github/workflows/reusable-aws-deploy.yml
     with:
       environment: production
