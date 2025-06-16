@@ -1,7 +1,7 @@
 github.com/Masterminds/semver/v3 v3.3.1 h1:QtNSWtVZ3nBfk8mAOu/B6v7FMJ+NHTIgUPi7rj+4nv4=
 github.com/Masterminds/semver/v3 v3.3.1/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
-github.com/aws/aws-cdk-go/awscdk/v2 v2.199.0 h1:AatlWsbPueND9J2g1rFcAtnWxGruie9yyNkT5ddM5Ko=
-github.com/aws/aws-cdk-go/awscdk/v2 v2.199.0/go.mod h1:wDpjTKlk0/LpDSN9+Smu2LHGXFZqQ30HUAorPLsZv5o=
+github.com/aws/aws-cdk-go/awscdk/v2 v2.201.0 h1:e7D/XYnyuTTYTBIcMjJMUpxa3PGKTCdcE2g0+2kahPQ=
+github.com/aws/aws-cdk-go/awscdk/v2 v2.201.0/go.mod h1:jXfb4EV1bls42ZR8ZqOcdA7uAYpDOi90x2qA19czY8k=
 github.com/aws/constructs-go/constructs/v10 v10.4.2 h1:+hDLTsFGLJmKIn0Dg20vWpKBrVnFrEWYgTEY5UiTEG8=
 github.com/aws/constructs-go/constructs/v10 v10.4.2/go.mod h1:cXsNCKDV+9eR9zYYfwy6QuE4uPFp6jsq6TtH1MwBx9w=
 github.com/aws/jsii-runtime-go v1.112.0 h1:7jusWZUgSTuSPLa2ZRv+siGuyoFSzFNk/TaHqlcFe6Y=
@@ -10,8 +10,8 @@ github.com/cdklabs/awscdk-asset-awscli-go/awscliv1/v2 v2.2.237 h1:zBIkMFeXR4xOll
 github.com/cdklabs/awscdk-asset-awscli-go/awscliv1/v2 v2.2.237/go.mod h1:1FHlu1VKVvrE/Bmcow4crPddJlOWhEXde/Zi4TcUhkA=
 github.com/cdklabs/awscdk-asset-node-proxy-agent-go/nodeproxyagentv6/v2 v2.1.0 h1:kElXjprC8wkpJu58vp+WFH6z0AJw4zitg5iSKJPKe3c=
 github.com/cdklabs/awscdk-asset-node-proxy-agent-go/nodeproxyagentv6/v2 v2.1.0/go.mod h1:JY4UnvNa1YDGQ4H5wohXTHl6YVY3uCDUWl4JYUrQfb8=
-github.com/cdklabs/cloud-assembly-schema-go/awscdkcloudassemblyschema/v41 v41.2.0 h1:J0llKbD1UKGS8fBV8NRbD0BZY6cknxUL+cQ6rdL+U4A=
-github.com/cdklabs/cloud-assembly-schema-go/awscdkcloudassemblyschema/v41 v41.2.0/go.mod h1:JNDQuA9sW21qkalkNLfhtii9NztdzL/lscAjDIKhbV0=
+github.com/cdklabs/cloud-assembly-schema-go/awscdkcloudassemblyschema/v44 v44.2.0 h1:l4CLD6JHaPqifetpg+IBjyBPUDnV8g4p3tRzoPSeP4Y=
+github.com/cdklabs/cloud-assembly-schema-go/awscdkcloudassemblyschema/v44 v44.2.0/go.mod h1:4JMSBtFdOtctyQRA/EehKHJ/h+xMc030zS76TLUrssY=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
