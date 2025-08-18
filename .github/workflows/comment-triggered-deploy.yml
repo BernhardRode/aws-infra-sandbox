@@ -27,7 +27,7 @@ jobs:
             return { ref: pr.head.ref, number: pr.number };
       
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ fromJSON(steps.pr.outputs.result).ref }}
       
