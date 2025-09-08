@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.4.1...v1.5.0) (2025-09-08)
+
+
+### Features
+
+* add development environment ([0ca065e](https://github.com/BernhardRode/aws-infra-sandbox/commit/0ca065e40e6993b92716c091e8afe3e312f33dfb))
+
+
+### Bug Fixes
+
+* run deploy to development only if not release is created ([9e92af5](https://github.com/BernhardRode/aws-infra-sandbox/commit/9e92af56a43926f50389f6ff627d78f3caff14da))
+
 ## [1.4.1](https://github.com/BernhardRode/aws-infra-sandbox/compare/v1.4.0...v1.4.1) (2025-04-30)
 
 
