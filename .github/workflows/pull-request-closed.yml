@@ -28,7 +28,7 @@ jobs:
         run: npm install -g aws-cdk
 
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Destroy PR Environment
         run: |
