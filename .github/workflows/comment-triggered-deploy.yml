@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Get PR details
         id: pr
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { data: pr } = await github.rest.pulls.get({
@@ -27,12 +27,12 @@ jobs:
             return { ref: pr.head.ref, number: pr.number };
       
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ fromJSON(steps.pr.outputs.result).ref }}
       
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
@@ -51,7 +51,7 @@ jobs:
           make preview-deploy PR_NUMBER=${PR_NUMBER}
       
       - name: Comment on PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

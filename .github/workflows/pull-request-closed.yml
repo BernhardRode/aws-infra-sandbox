@@ -28,7 +28,7 @@ jobs:
         run: npm install -g aws-cdk
 
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Destroy PR Environment
         run: |
@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Comment on PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
