@@ -20,8 +20,6 @@ jobs:
         
       - name: Setup Go
         uses: actions/setup-go@v6
-        with:
-          cache: true
           
       - name: Install dependencies
         run: |
