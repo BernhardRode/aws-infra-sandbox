@@ -7,7 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.219.0
 	github.com/aws/constructs-go/constructs/v10 v10.4.4
-	github.com/aws/jsii-runtime-go v1.121.0
+	github.com/aws/jsii-runtime-go v1.122.0
 )
 
 require (
